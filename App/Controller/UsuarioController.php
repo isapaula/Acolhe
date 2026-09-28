@@ -36,23 +36,23 @@ class UsuarioController
                 $_SESSION['user_nome']  = $usuario['nome_user'];
                 $_SESSION['user_papel'] = $usuario['id_papel'];
 
-                switch ($usuario['id_papel']) {
+            switch ($usuario['id_papel']) {
 
-                    case 1:
-                        header('Location: /Psychology-clinic-project/public/paciente/index');
-                        break;
+                case 1:
+                    header('Location: /paciente/index');
+                    break;
 
-                    case 2:
-                        header('Location: /Psychology-clinic-project/public/aluno/index');
-                        break;
+                case 2:
+                    header('Location: /aluno/index');
+                    break;
 
-                    case 3:
-                        header('Location: /Psychology-clinic-project/public/professor/index');
-                        break;
+                case 3:
+                    header('Location: /professor/index');
+                    break;
 
-                    default:
-                        header('Location: /Psychology-clinic-project/public/usuario/login');
-                        break;
+                default:
+                    header('Location: /usuario/login');
+                    break;
                 }
 
                 exit;
@@ -62,7 +62,9 @@ class UsuarioController
             }
 
         } catch (\Exception $e) {
+
             error_log("Erro ao logar no sistema: ". $e->getMessage());
+
             echo "Erro ao logar no sistema: ".$e->getMessage();
 
         }

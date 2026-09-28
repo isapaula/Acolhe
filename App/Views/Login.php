@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../../public/assets/css/materialize.css">
+    <link rel="stylesheet" href="/assets/css/materialize.css">
     <style>
         .formulario {
       min-height: 560px;
@@ -19,7 +19,7 @@
         <div class="formulario white black-text">
             <section>
                 <h3>Tela de Login</h3>
-                    <form action="/Psychology-clinic-project/public/usuario/store" method="post">
+                    <form action="/usuario/store" method="post">
 
                         <input type="text" name="user" id="user" placeholder="Digite seu e-mail" required>
                         <br><br>
@@ -28,7 +28,14 @@
                         <button class="btn waves-effect waves-light" type="submit">Logar</button>
                     </form>
                     <h3>Não tem cadastro?</h3> 
-                    <a class="waves-effect waves-light btn" href="Cadastro.php">Click aqui</a>
+
+                    <h6>Como deseja se cadastrar no sistema?</h6>
+
+                    <a class="waves-effect waves-light btn" href="/cadastro/paciente">Paciente</a>
+
+                    <a class="waves-effect waves-light btn" href="/cadastro/aluno">Aluno</a>
+
+                    <a class="waves-effect waves-light btn" href="/cadastro/professor">Professor</a>
             </section>
         </div>
     </div>

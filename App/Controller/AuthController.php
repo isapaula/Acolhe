@@ -20,7 +20,7 @@ class AuthController
             $pdo->beginTransaction();
 
             $usuarioService = new UsuarioService($pdo);
-            $pacienteService = new PacienteService();
+            $pacienteService = new PacienteService($pdo);
 
             $dadosUsuario = $this->obterDadosUsuario();
             $this->validarDadosUsuario($dadosUsuario);
@@ -40,7 +40,7 @@ class AuthController
 
             $pdo->commit();
 
-            header('Location: /Psychology-clinic-project/public/usuario/login');
+            header('Location: /usuario/login');
             exit;
 
         } catch (\Exception $e) {
@@ -63,7 +63,7 @@ class AuthController
             $pdo->beginTransaction();
 
             $usuarioService = new UsuarioService($pdo);
-            $professorService = new ProfessorService();
+            $professorService = new ProfessorService($pdo);
 
             $dadosUsuario = $this->obterDadosUsuario();
             $this->validarDadosUsuario($dadosUsuario);
@@ -81,7 +81,7 @@ class AuthController
 
             $pdo->commit();
 
-            header('Location: /Psychology-clinic-project/public/usuario/login');
+            header('Location: /usuario/login');
             exit;
 
         } catch (\Exception $e) {
@@ -103,7 +103,7 @@ class AuthController
             $pdo->beginTransaction();
 
             $usuarioService = new UsuarioService($pdo);
-            $alunoService   = new AlunoService();
+            $alunoService   = new AlunoService($pdo);
 
             $dadosUsuario = $this->obterDadosUsuario();
             $this->validarDadosUsuario($dadosUsuario);
@@ -122,7 +122,7 @@ class AuthController
 
             $pdo->commit();
 
-            header('Location: /Psychology-clinic-project/public/usuario/login');
+            header('Location: /usuario/login');
             exit;
 
         } catch (\Exception $e) {

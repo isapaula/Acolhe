@@ -1,0 +1,10 @@
+.git
+.env
+vendor/
+test-results/
+.phpunit.result.cache
+.php-cs-fixer.cache
+comandos
+phpunit.xml
+README.md
+.gitignore

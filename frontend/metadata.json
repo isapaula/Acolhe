@@ -1,0 +1,7 @@
+{
+  "name": "Acolhe",
+  "description": "Plataforma de acolhimento e clínica-escola de psicologia universitária conectando pacientes da comunidade, alunos estagiários e professores supervisores.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

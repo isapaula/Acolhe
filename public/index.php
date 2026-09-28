@@ -12,7 +12,7 @@ $path = dirname(__FILE__,2).'\\';
 
 
 $dotenv = Dotenv::createImmutable($path);
-$dotenv->load();
+$dotenv->safeLoad();
 
 $router = new Router(); 
 $router->dispatch();

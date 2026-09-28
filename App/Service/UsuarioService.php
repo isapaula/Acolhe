@@ -2,8 +2,6 @@
 
 namespace App\Service;
 
-use App\Database\Conexao;
-
 class UsuarioService
 {
     private $pdo; 
@@ -46,8 +44,6 @@ class UsuarioService
 
         $dadosUsuario = $this->validacaoDados($dadosUsuario); 
 
-        try {
-
             $dadosUsuario['senha'] = password_hash($dadosUsuario['senha'], PASSWORD_DEFAULT);
 
             $sql = "INSERT INTO usuario (nome_user, email_user, senha_user, id_papel)
@@ -71,11 +67,6 @@ class UsuarioService
 
             return $idUsuario;
 
-        } catch (\Exception $e) {
-
-            echo "Não foi possível cadastrar o usuário! ".$e->getMessage();
-
-        }
 
     }
 }
