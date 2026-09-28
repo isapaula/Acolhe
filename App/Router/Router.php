@@ -10,15 +10,15 @@ class Router
 
         $uri = strtok($uri, '?');
 
-        $base = '/Psychology-clinic-project/public';
+        //var_dump($uri);
 
-        if (strpos($uri, $base) === 0) {
-            $uri = substr($uri, strlen($base));
-        }
+        $base = '/';
 
         $partes = explode('/', trim($uri, '/'));
 
-        $controllerNome = !empty($partes[0]) ? ucfirst($partes[0]) . 'Controller' : 'HomeController';
+        $controllerNome = !empty($partes[0])
+            ? ucfirst($partes[0]) . 'Controller'
+            : 'HomeController';
 
         $metodo = $partes[1] ?? 'index';
 
@@ -31,6 +31,7 @@ class Router
         }
 
         $controller = new $controllerClasse();
+
         $controller->$metodo();
     }
 }

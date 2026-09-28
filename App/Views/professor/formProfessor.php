@@ -7,7 +7,7 @@
 </head>
 <body>
     <h2>Cadastro do Professor</h2>
-    <form action="/Psychology-clinic-project/public/auth/professor" method="post">
+    <form action="/auth/professor" method="post">
          <input type="text" name="nome" id="nome" placeholder="Digite o nome" required>
         <br><br>
         <input type="email" name="email" id="email" placeholder="Digite o e-mail" required>
