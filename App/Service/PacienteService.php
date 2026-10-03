@@ -16,8 +16,6 @@ class PacienteService
     public function criar($dados)
     {
 
-        try {
-
             $sql = "INSERT INTO paciente (id_usuario, nome_paciente,  data_nascimento, telefone)
                         VALUES (:id_usuario, :nome_paciente,  :data_nascimento, :telefone)";
 
@@ -36,11 +34,6 @@ class PacienteService
             $_SESSION['paciente_id'] = $idPaciente;
 
 
-        } catch (\Exception $e) {
-
-            echo "Não foi possível cadastrar o paciente! ".$e->getMessage();
-
-        }
 
     }
 

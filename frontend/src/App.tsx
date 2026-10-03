@@ -13,6 +13,7 @@ import { RegisterPage } from "./components/RegisterPage";
 import { PatientPortal } from "./components/PatientPortal";
 import { StudentPortal } from "./components/StudentPortal";
 import { TeacherPortal } from "./components/TeacherPortal";
+import { buscarUsuarios } from "./api/usuarioApi";
 
 export default function App() {
   // Navigation View State
@@ -22,7 +23,7 @@ export default function App() {
   const [fontSize, setFontSize] = useState<"normal" | "large" | "larger">("normal");
   const [highContrast, setHighContrast] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-
+  const [dados, setDados] = useState(null);
   // Modals State
   const [isTriageOpen, setIsTriageOpen] = useState(false);
   const [triageDefaultService, setTriageDefaultService] = useState("Atendimento Psicológico Individual");
@@ -74,6 +75,12 @@ export default function App() {
         setReducedMotion={setReducedMotion}
       />
 
+        {dados && (
+          <pre>
+            {JSON.stringify(dados, null, 2)}
+          </pre>
+        )}
+
       {/* Conditional Screen Rendering */}
       {currentView === "landing" && (
         <>
@@ -89,6 +96,7 @@ export default function App() {
             onOpenTriage={() => handleOpenTriage()}
           />
 
+           
           <main id="main-content" className="relative">
             {/* 1. Animated Full-Screen Hero Section (Sticky) */}
             <HeroSection

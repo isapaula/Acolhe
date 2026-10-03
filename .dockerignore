@@ -8,3 +8,4 @@ comandos
 phpunit.xml
 README.md
 .gitignore
+frontend/node_modules
