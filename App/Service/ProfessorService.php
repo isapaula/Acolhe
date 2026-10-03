@@ -15,8 +15,6 @@ class ProfessorService
     public function criar($dados)
     {
 
-        try {
-
 
             $sql = "INSERT INTO professor (id_usuario, registro_profissional)
                 VALUES (:id_usuario, :registro_profissional)";
@@ -32,12 +30,6 @@ class ProfessorService
 
             $_SESSION['professor_id'] = $idprofessor;
 
-
-        } catch (\Exception $e) {
-
-            echo "Não foi possível cadastrar o professor! ".$e->getMessage();
-
-        }
 
     }
 }

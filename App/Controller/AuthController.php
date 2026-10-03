@@ -40,7 +40,14 @@ class AuthController
 
             $pdo->commit();
 
-            header('Location: /usuario/login');
+            http_response_code(201);
+            header('Content-Type: application/json');
+
+            echo json_encode([
+                'mensagem' => 'Paciente cadastrado com sucesso',
+                'id' => $idUsuario
+            ]);
+
             exit;
 
         } catch (\Exception $e) {
@@ -49,7 +56,12 @@ class AuthController
                 $pdo->rollBack();
             }
 
-            echo $e->getMessage();
+            http_response_code(400);
+            header('Content-Type: application/json');
+
+            echo json_encode([
+                'erro' => $e->getMessage()
+            ]);
 
         }
     }
@@ -81,7 +93,14 @@ class AuthController
 
             $pdo->commit();
 
-            header('Location: /usuario/login');
+            http_response_code(201);
+            header('Content-Type: application/json');
+
+            echo json_encode([
+                'mensagem' => 'Professor cadastrado com sucesso',
+                'id' => $idUsuario
+            ]);
+
             exit;
 
         } catch (\Exception $e) {
@@ -90,7 +109,12 @@ class AuthController
                 $pdo->rollBack();
             }
 
-            echo $e->getMessage();
+            http_response_code(400);
+            header('Content-Type: application/json');
+
+            echo json_encode([
+                'erro' => $e->getMessage()
+            ]);
         }
     }
 
@@ -122,7 +146,13 @@ class AuthController
 
             $pdo->commit();
 
-            header('Location: /usuario/login');
+            http_response_code(201);
+            header('Content-Type: application/json');
+
+            echo json_encode([
+                'mensagem' => 'Aluno cadastrado com sucesso',
+                'id' => $idUsuario
+            ]);
             exit;
 
         } catch (\Exception $e) {
@@ -132,7 +162,12 @@ class AuthController
                 $pdo->rollBack();
             }
 
-            echo $e->getMessage();
+            http_response_code(400);
+            header('Content-Type: application/json');
+
+            echo json_encode([
+                'erro' => $e->getMessage()
+            ]);
         }
 
     }
@@ -143,10 +178,13 @@ class AuthController
 
     private function obterDadosUsuario()
     {
+
+         $dados = json_decode(file_get_contents('php://input'), true);
+
         return [
-            'nome'  => $_POST['nome'] ?? null,
-            'email' => $_POST['email'] ?? null,
-            'senha' => $_POST['senha'] ?? null,
+            'nome'  => $dados['nome'] ?? null,
+            'email' => $dados['email'] ?? null,
+            'senha' => $dados['senha'] ?? null,
         ];
     }
 
@@ -163,26 +201,32 @@ class AuthController
 
     private function obterDadosPaciente()
     {
-        $telefone = $_POST['telefone'] ?? null;
+        $dados = json_decode(file_get_contents('php://input'), true);
+
+        $telefone = $dados['telefone'] ?? null;
 
         return [
-            'data_nascimento' => $_POST['data_nasc'] ?? null,
+            'data_nascimento' => $dados['data_nasc'] ?? null,
             'telefone'        => $this->limparTelefone($telefone)
         ];
     }
 
     private function obterDadosAluno()
     {
+        $dados = json_decode(file_get_contents('php://input'), true);
+
         return [
-            'matricula' => $_POST['matricula'] ?? null,
-            'semestre'  => $_POST['semestre'] ?? null
+            'matricula' => $dados['matricula'] ?? null,
+            'semestre'  => $dados['semestre'] ?? null
         ];
     }
 
     private function obterDadosProfessor()
     {
+        $dados = json_decode(file_get_contents('php://input'), true);
+
         return [
-            'rp' => $_POST['rp'] ?? null
+            'rp' => $dados['rp'] ?? null
         ];
     }
 

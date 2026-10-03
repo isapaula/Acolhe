@@ -16,14 +16,27 @@ class Router
 
         $partes = explode('/', trim($uri, '/'));
 
-        $controllerNome = !empty($partes[0])
+        if ($partes[0] == 'api') {
+            
+            $controllerNome = ucfirst($partes[1]) .'Api'. 'Controller';
+
+            $controllerClasse = "App\\Api\\{$controllerNome}";
+
+            $metodo = $partes[2] ?? 'index';
+
+        }else{
+
+            $controllerNome = !empty($partes[0])
             ? ucfirst($partes[0]) . 'Controller'
             : 'HomeController';
 
-        $metodo = $partes[1] ?? 'index';
+            $controllerClasse = "App\\Controller\\{$controllerNome}";
 
-        $controllerClasse = "App\\Controller\\{$controllerNome}";
+            $metodo = $partes[1] ?? 'index';
 
+        }
+
+    
         if (!class_exists($controllerClasse) || !method_exists($controllerClasse, $metodo)) {
             http_response_code(404);
             echo "404 - Página não encontrada!";

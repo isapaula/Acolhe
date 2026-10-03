@@ -14,8 +14,6 @@ class AlunoService
     public function criar($dados)
     {
 
-        try {
-
             $sql = "INSERT INTO aluno (id_usuario, matricula , semestre )
                 VALUES(:id_usuario, :matricula, :semestre )";
 
@@ -30,13 +28,6 @@ class AlunoService
             $idAluno = $this->pdo->lastInsertId();
 
             $_SESSION['Aluno_id'] = $idAluno;
-
-
-        } catch (\Exception $e) {
-
-            echo "Não foi possível cadastrar o Aluno! ".$e->getMessage();
-
-        }
 
     }
 
