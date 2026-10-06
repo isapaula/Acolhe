@@ -67,6 +67,7 @@ class UsuarioController
                 'usuario' => [
                     'id' => $usuario['id_user'],
                     'nome' => $usuario['nome_user'],
+                    'email' => $usuario['email_user'],
                     'papel' => $usuario['id_papel']
                 ]
             ]);
