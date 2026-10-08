@@ -29,14 +29,51 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onLoginSuccess(selectedRole);
-    }, 600);
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  setIsLoading(true);
+
+  try {
+    const response = await fetch("http://localhost:8080/usuario/store", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        senha: password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.erro || "E-mail ou senha inválidos.");
+      return;
+    }
+
+    console.log("Login realizado:", data);
+
+    const papel = data.usuario.papel;
+
+    if (papel === 1) {
+      onLoginSuccess("paciente");
+    } else if (papel === 2) {
+      onLoginSuccess("aluno");
+    } else if (papel === 3) {
+      onLoginSuccess("professor");
+    } else {
+      alert("Papel de usuário não reconhecido.");
+    }
+
+  } catch (error) {
+    console.error("Erro no login:", error);
+    alert("Não foi possível conectar ao servidor.");
+  } finally {
+    setIsLoading(false);
+  }
+ };
 
   const handleQuickDemo = (role: UserRole) => {
     setSelectedRole(role);

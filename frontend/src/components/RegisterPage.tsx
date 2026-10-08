@@ -25,6 +25,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [error, setError] = useState("");
   
   // Specific fields
   const [semester, setSemester] = useState("9º Semestre");
@@ -36,15 +38,77 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!termsAgreed) return;
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onRegisterSuccess(role);
-    }, 700);
-  };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!termsAgreed) return;
+
+  setIsLoading(true);
+  setError("");
+
+  try {
+    let endpoint = "";
+    let body = {};
+
+    if (role === "paciente") {
+      endpoint = "http://localhost:8080/auth/paciente";
+
+      body = {
+        nome: name,
+        email: email,
+        senha: password,
+        data_nasc: birthDate,
+        telefone: phone,
+      };
+    }
+
+    if (role === "aluno") {
+      endpoint = "http://localhost:8080/auth/aluno";
+
+      body = {
+        nome: name,
+        email: email,
+        senha: password,
+        matricula: Number(ra),
+        semestre: Number(semester.replace("º Semestre", "")),
+      };
+    }
+
+  if (role === "professor") {
+    endpoint = "http://localhost:8080/auth/professor";
+
+    body = {
+      nome: name,
+      email: email,
+      senha: password,
+      rp: crp,
+    };
+  }
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setError(data.erro || "Não foi possível realizar o cadastro.");
+      return;
+    }
+
+    onRegisterSuccess(role);
+
+  } catch (error) {
+    setError("Não foi possível conectar ao servidor.");
+
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-center watercolor-wash-hero relative">
@@ -169,16 +233,17 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
 
           {/* Role-Specific Fields */}
           {role === "paciente" && (
-            <div>
+              <div>
               <label className="block text-xs font-semibold text-[#1F3A52] mb-1">
-                Breve motivo da procura por psicoterapia
+                Data de nascimento *
               </label>
-              <textarea
-                rows={2}
-                value={complaint}
-                onChange={(e) => setComplaint(e.target.value)}
-                placeholder="Ex.: Ansiedade, estresse acadêmico, dificuldades relacionais..."
-                className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-[#F9F6F0] border border-[#EBE5DA] text-[#1F3A52] focus:outline-none focus:border-[#4a8b7f] resize-none"
+
+              <input
+                type="date"
+                required
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-[#F9F6F0] border border-[#EBE5DA] text-[#1F3A52] focus:outline-none focus:border-[#4a8b7f]"
               />
             </div>
           )}
@@ -294,6 +359,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             </label>
           </div>
 
+          {error && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
+                {error}
+              </div>
+            )}
           <button
             type="submit"
             disabled={isLoading || !termsAgreed}

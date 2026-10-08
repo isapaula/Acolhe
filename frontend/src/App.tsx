@@ -116,12 +116,10 @@ export default function App() {
 
               {/* 4. Como Funciona a Clínica-Escola (no lugar dos depoimentos, com animação automática de passos) */}
               <HowItWorksSection
-                onOpenTriage={() => handleOpenTriage()}
-                onNavigateToPortal={(role) => {
-                  setCurrentUserRole(role);
-                  setCurrentView(role);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                    onNavigateToPortal={() => {
+                      setCurrentView("login");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
                 reducedMotion={reducedMotion}
               />
 
@@ -146,23 +144,24 @@ export default function App() {
         />
       )}
 
-      {currentView === "paciente" && (
-        <PatientPortal
-          onLogout={handleLogout}
-        />
-      )}
+          {currentView === "paciente" && currentUserRole === "paciente" && (
+            <PatientPortal
+              onLogout={handleLogout}
+            />
+          )}
 
-      {currentView === "aluno" && (
-        <StudentPortal
-          onLogout={handleLogout}
-        />
-      )}
 
-      {currentView === "professor" && (
-        <TeacherPortal
-          onLogout={handleLogout}
-        />
-      )}
+          {currentView === "aluno" && currentUserRole === "aluno" && (
+            <StudentPortal
+              onLogout={handleLogout}
+            />
+          )}
+
+          {currentView === "professor" && currentUserRole === "professor" && (
+            <TeacherPortal
+              onLogout={handleLogout}
+            />
+          )}
 
       {/* Triage & Inscription Modal */}
       <TriageModal
