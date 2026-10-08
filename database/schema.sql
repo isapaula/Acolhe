@@ -28,6 +28,7 @@ CREATE TABLE `usuario` (
   CONSTRAINT `fk_id_papel` FOREIGN KEY (`id_papel`) REFERENCES `papeis` (`id_papel`),
   CONSTRAINT `email_nao_vazio` CHECK ((`email_user` <> _utf8mb4'')),
   CONSTRAINT `nome_nao_vazio` CHECK ((`nome_user` <> _utf8mb4'')),
+  CONSTRAINT `telefone_nao_vazio` CHECK ((`telefone` <> _utf8mb4'')),
   CONSTRAINT `senha_nao_vazio` CHECK ((`senha_user` <> _utf8mb4''))
 ) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -52,8 +53,7 @@ CREATE TABLE `paciente` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_paciente`),
   UNIQUE KEY `uk_paciente_usuario` (`id_usuario`),
-  CONSTRAINT `fk_paciente_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_user`),
-  CONSTRAINT `telefone_nao_vazio` CHECK ((`telefone` <> _utf8mb4''))
+  CONSTRAINT `fk_paciente_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_user`)
 ) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `aluno`;
