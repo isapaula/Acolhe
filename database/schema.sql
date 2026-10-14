@@ -134,3 +134,21 @@ CREATE TABLE `acompanhamentos` (
   CONSTRAINT `fk_acomp_professor` FOREIGN KEY (`id_professor`) REFERENCES `professor` (`id_professor`),
   CONSTRAINT `fk_acomp_solicitacao` FOREIGN KEY (`id_solicitacao`) REFERENCES `solicitacoes_atendimento` (`id_solicitacao`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+ALTER TABLE solicitacoes_atendimento
+ADD COLUMN id_paciente_solicitacao_ativa INT
+GENERATED ALWAYS AS (
+    CASE
+        WHEN solicitacoes_status IN (
+            'AGUARDANDO_TRIAGEM',
+            'ASSUMIDA',
+            'APROVADA',
+            'EM_ATENDIMENTO'
+        )
+        THEN id_paciente
+        ELSE NULL
+    END
+) STORED,
+ADD UNIQUE KEY uq_solicitacao_paciente_ativa (
+    id_paciente_solicitacao_ativa
+);
