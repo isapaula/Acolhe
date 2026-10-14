@@ -27,6 +27,12 @@ class UsuarioService
             
         }
 
+        if (empty($dados['telefone'])) {
+
+            throw new \Exception("Telefone não informado! ");
+            
+        }
+
         if (empty($dados['senha'])) {
             
             throw new \Exception("Senha não informada! ");
@@ -46,8 +52,8 @@ class UsuarioService
 
             $dadosUsuario['senha'] = password_hash($dadosUsuario['senha'], PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO usuario (nome_user, email_user, senha_user, id_papel)
-                        VALUES (:nome, :email, :senha, :perfil);";
+            $sql = "INSERT INTO usuario (nome_user, email_user, telefone, senha_user, id_papel)
+                        VALUES (:nome, :email, :telefone, :senha, :perfil);";
 
 
     
@@ -55,6 +61,7 @@ class UsuarioService
 
             $stmtUser->bindValue(':nome', $dadosUsuario['nome'], \PDO::PARAM_STR);
             $stmtUser->bindValue(':email', $dadosUsuario['email'], \PDO::PARAM_STR);
+            $stmtUser->bindValue(':telefone', $dadosUsuario['telefone'], \PDO::PARAM_STR);
             $stmtUser->bindValue(':senha', $dadosUsuario['senha'], \PDO::PARAM_STR);
             $stmtUser->bindValue(':perfil', $id_perfil, \PDO::PARAM_INT);
 

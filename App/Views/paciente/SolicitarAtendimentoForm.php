@@ -9,7 +9,7 @@
     <h2>Seja bem vindo!</h2>
     <h2><?php  echo  $_SESSION['user_nome']; ?></h2>
     <h3>Por gentileza, solicite um atendimento preenchendo os campos abaixo.</h3>
-    <form action="/Psychology-clinic-project/public/solicitacao/store" method="post">
+    <form action="/solicitacao/store" method="post">
         <input type="text" name="especialidade" id="especialidade" placeholder="Informe a especialidade">
         <br><br>
         <label for="">Informe o horário desejado:</label>

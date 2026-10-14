@@ -15,6 +15,13 @@ import { StudentPortal } from "./components/StudentPortal";
 import { TeacherPortal } from "./components/TeacherPortal";
 import { buscarUsuarios } from "./api/usuarioApi";
 
+  interface CurrentUser {
+  id: number;
+  nome: string;
+  email: string;
+  papel: number;
+}
+
 export default function App() {
   // Navigation View State
   const [currentView, setCurrentView] = useState<CurrentView>("landing");
@@ -22,6 +29,7 @@ export default function App() {
   // Accessibility States
   const [fontSize, setFontSize] = useState<"normal" | "large" | "larger">("normal");
   const [highContrast, setHighContrast] = useState(false);
+  const [triageRequiresLogin, setTriageRequiresLogin] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [dados, setDados] = useState(null);
   // Modals State
@@ -30,6 +38,14 @@ export default function App() {
 
   // Authentication State
   const [currentUserRole, setCurrentUserRole] = useState<UserRole | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  
+  const [patientSolicitacaoRefreshKey, setPatientSolicitacaoRefreshKey] = useState(0);
+
+
+  const handleSolicitacaoCriada = () => {
+    setPatientSolicitacaoRefreshKey((previous) => previous + 1);
+  };
 
   // Keep accessibility classes in sync on document body
   useEffect(() => {
@@ -47,17 +63,37 @@ export default function App() {
     setIsTriageOpen(true);
   };
 
-  const handleLoginSuccess = (role: UserRole) => {
-    setCurrentUserRole(role);
-    if (role === "paciente") setCurrentView("paciente");
-    else if (role === "aluno") setCurrentView("aluno");
-    else if (role === "professor") setCurrentView("professor");
+  const handleLoginSuccess = (user: CurrentUser) => {
+    setCurrentUser(user);
+
+    if (user.papel === 1) {
+      setCurrentUserRole("paciente");
+      setCurrentView("paciente");
+    } else if (user.papel === 2) {
+      setCurrentUserRole("aluno");
+      setCurrentView("aluno");
+    } else if (user.papel === 3) {
+      setCurrentUserRole("professor");
+      setCurrentView("professor");
+    } else {
+      setCurrentUser(null);
+      alert("Perfil de usuário não reconhecido.");
+    }
   };
 
   const handleLogout = () => {
+    setCurrentUser(null);
     setCurrentUserRole(null);
     setCurrentView("landing");
   };
+
+  const handleTriageRequiresLogin = () => {
+    setTriageRequiresLogin(true);
+    setIsTriageOpen(false);
+    setCurrentView("login");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
 
   return (
     <div
@@ -116,12 +152,10 @@ export default function App() {
 
               {/* 4. Como Funciona a Clínica-Escola (no lugar dos depoimentos, com animação automática de passos) */}
               <HowItWorksSection
-                onOpenTriage={() => handleOpenTriage()}
-                onNavigateToPortal={(role) => {
-                  setCurrentUserRole(role);
-                  setCurrentView(role);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                    onNavigateToPortal={() => {
+                      setCurrentView("login");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
                 reducedMotion={reducedMotion}
               />
 
@@ -146,23 +180,29 @@ export default function App() {
         />
       )}
 
-      {currentView === "paciente" && (
-        <PatientPortal
-          onLogout={handleLogout}
-        />
-      )}
+          {currentView === "paciente" &&
+            currentUserRole === "paciente" &&
+            currentUser && (
+              <PatientPortal
+                onLogout={handleLogout}
+                currentUser={currentUser}
+                onSolicitarAtendimento={() => handleOpenTriage()}
+                refreshKey={patientSolicitacaoRefreshKey}
+              />
+          )}
 
-      {currentView === "aluno" && (
-        <StudentPortal
-          onLogout={handleLogout}
-        />
-      )}
 
-      {currentView === "professor" && (
-        <TeacherPortal
-          onLogout={handleLogout}
-        />
-      )}
+          {currentView === "aluno" && currentUserRole === "aluno" && (
+            <StudentPortal
+              onLogout={handleLogout}
+            />
+          )}
+
+          {currentView === "professor" && currentUserRole === "professor" && (
+            <TeacherPortal
+              onLogout={handleLogout}
+            />
+          )}
 
       {/* Triage & Inscription Modal */}
       <TriageModal
@@ -170,6 +210,9 @@ export default function App() {
         onClose={() => setIsTriageOpen(false)}
         defaultService={triageDefaultService}
         onSuccessNavigateToPatient={() => setCurrentView("paciente")}
+        mode={currentView === "paciente" ? "patient" : "public"}
+        onRequireAuth={handleTriageRequiresLogin}
+        onSolicitacaoCriada={handleSolicitacaoCriada}
       />
     </div>
   );

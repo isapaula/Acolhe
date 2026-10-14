@@ -34,7 +34,6 @@ class AuthController
             $dados['id_usuario'] = $idUsuario;
             $dados['nome_paciente'] = $dadosUsuario['nome'];
             $dados['data_nascimento'] =  $dadosPaciente['data_nascimento'];
-            $dados['telefone'] = $dadosPaciente['telefone'];
 
             $pacienteService->criar($dados);
 
@@ -181,9 +180,12 @@ class AuthController
 
          $dados = json_decode(file_get_contents('php://input'), true);
 
+        $telefone = $dados['telefone'] ?? null;
+
         return [
             'nome'  => $dados['nome'] ?? null,
             'email' => $dados['email'] ?? null,
+            'telefone' => $this->limparTelefone($telefone),
             'senha' => $dados['senha'] ?? null,
         ];
     }
@@ -203,11 +205,8 @@ class AuthController
     {
         $dados = json_decode(file_get_contents('php://input'), true);
 
-        $telefone = $dados['telefone'] ?? null;
-
         return [
-            'data_nascimento' => $dados['data_nasc'] ?? null,
-            'telefone'        => $this->limparTelefone($telefone)
+            'data_nascimento' => $dados['data_nasc'] ?? null
         ];
     }
 

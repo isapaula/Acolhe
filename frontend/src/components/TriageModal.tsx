@@ -7,6 +7,7 @@ interface TriageModalProps {
   onClose: () => void;
   defaultService?: string;
   onSuccessNavigateToPatient?: () => void;
+  onSolicitacaoCriada?: () => void;
 }
 
 export const TriageModal: React.FC<TriageModalProps> = ({
@@ -14,6 +15,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
   onClose,
   defaultService = "Atendimento Psicológico Individual",
   onSuccessNavigateToPatient,
+  onSolicitacaoCriada,
 }) => {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
@@ -25,17 +27,56 @@ export const TriageModal: React.FC<TriageModalProps> = ({
   const [urgencyAck, setUrgencyAck] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [preferredTime, setPreferredTime] = useState("14:00");
+  const [submitError, setSubmitError] = useState("");
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setSubmitError("");
+
+    try {
+      const response = await fetch(
+        "http://localhost:8080/solicitacao/store",
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            especialidade: service,
+            selecthora: preferredTime,
+            observacao: complaint,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.erro || "Não foi possível cadastrar a solicitação."
+        );
+      }
+
+      onSolicitacaoCriada?.();
       setSubmittedSuccess(true);
-    }, 1000);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Erro inesperado ao enviar a solicitação."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   return (
     <div
@@ -166,6 +207,25 @@ export const TriageModal: React.FC<TriageModalProps> = ({
                 </div>
 
                 <div>
+                    <label className="block text-xs font-semibold text-[#1F3A52] mb-1">
+                      Horário desejado
+                    </label>
+
+                    <select
+                      value={preferredTime}
+                      onChange={(e) => setPreferredTime(e.target.value)}
+                      required
+                      className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE5DA] text-[#1F3A52]"
+                    >
+                      <option value="08:00">08:00</option>
+                      <option value="10:00">10:00</option>
+                      <option value="14:00">14:00</option>
+                      <option value="16:00">16:00</option>
+                    </select>
+                  </div>
+                <div>
+
+
                   <label className="block text-xs font-semibold text-[#1F3A52] mb-1">
                     Serviço de Interesse
                   </label>
@@ -264,6 +324,12 @@ export const TriageModal: React.FC<TriageModalProps> = ({
                     Concordo com os termos de triagem e acolhimento da Clínica-Escola Acolhe.
                   </label>
                 </div>
+
+                {submitError && (
+                  <p role="alert" className="text-sm text-red-700">
+                    {submitError}
+                  </p>
+                )}
 
                 <div className="pt-3 flex items-center justify-between">
                   <button

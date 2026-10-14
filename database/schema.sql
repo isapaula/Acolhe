@@ -17,6 +17,7 @@ CREATE TABLE `usuario` (
   `id_user` int NOT NULL AUTO_INCREMENT,
   `nome_user` varchar(200) NOT NULL,
   `email_user` varchar(100) NOT NULL,
+  `telefone` varchar(20) NOT NULL,
   `senha_user` varchar(255) NOT NULL,
   `id_papel` int DEFAULT NULL,
   `ativo` tinyint(1) NOT NULL DEFAULT '1',
@@ -27,6 +28,7 @@ CREATE TABLE `usuario` (
   CONSTRAINT `fk_id_papel` FOREIGN KEY (`id_papel`) REFERENCES `papeis` (`id_papel`),
   CONSTRAINT `email_nao_vazio` CHECK ((`email_user` <> _utf8mb4'')),
   CONSTRAINT `nome_nao_vazio` CHECK ((`nome_user` <> _utf8mb4'')),
+  CONSTRAINT `telefone_nao_vazio` CHECK ((`telefone` <> _utf8mb4'')),
   CONSTRAINT `senha_nao_vazio` CHECK ((`senha_user` <> _utf8mb4''))
 ) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -46,14 +48,12 @@ CREATE TABLE `paciente` (
   `id_usuario` int NOT NULL,
   `nome_paciente` varchar(50) DEFAULT NULL,
   `data_nascimento` date NOT NULL,
-  `telefone` varchar(20) NOT NULL,
   `observacoes_iniciais` varchar(200) DEFAULT NULL,
   `ativo` tinyint(1) NOT NULL DEFAULT '1',
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_paciente`),
   UNIQUE KEY `uk_paciente_usuario` (`id_usuario`),
-  CONSTRAINT `fk_paciente_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_user`),
-  CONSTRAINT `telefone_nao_vazio` CHECK ((`telefone` <> _utf8mb4''))
+  CONSTRAINT `fk_paciente_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_user`)
 ) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `aluno`;
@@ -134,3 +134,21 @@ CREATE TABLE `acompanhamentos` (
   CONSTRAINT `fk_acomp_professor` FOREIGN KEY (`id_professor`) REFERENCES `professor` (`id_professor`),
   CONSTRAINT `fk_acomp_solicitacao` FOREIGN KEY (`id_solicitacao`) REFERENCES `solicitacoes_atendimento` (`id_solicitacao`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+ALTER TABLE solicitacoes_atendimento
+ADD COLUMN id_paciente_solicitacao_ativa INT
+GENERATED ALWAYS AS (
+    CASE
+        WHEN solicitacoes_status IN (
+            'AGUARDANDO_TRIAGEM',
+            'ASSUMIDA',
+            'APROVADA',
+            'EM_ATENDIMENTO'
+        )
+        THEN id_paciente
+        ELSE NULL
+    END
+) STORED,
+ADD UNIQUE KEY uq_solicitacao_paciente_ativa (
+    id_paciente_solicitacao_ativa
+);

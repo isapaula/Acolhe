@@ -16,15 +16,14 @@ class PacienteService
     public function criar($dados)
     {
 
-            $sql = "INSERT INTO paciente (id_usuario, nome_paciente,  data_nascimento, telefone)
-                        VALUES (:id_usuario, :nome_paciente,  :data_nascimento, :telefone)";
+            $sql = "INSERT INTO paciente (id_usuario, nome_paciente,  data_nascimento)
+                        VALUES (:id_usuario, :nome_paciente,  :data_nascimento)";
 
             $stmtPaciente = $this->pdo->prepare($sql);
 
             $stmtPaciente->bindValue(':id_usuario', $dados['id_usuario'], \PDO::PARAM_STR);
             $stmtPaciente->bindValue(':nome_paciente', $dados['nome_paciente'], \PDO::PARAM_STR);
             $stmtPaciente->bindValue(':data_nascimento', $dados['data_nascimento'], \PDO::PARAM_STR);
-            $stmtPaciente->bindValue(':telefone', $dados['telefone'], \PDO::PARAM_STR);
 
             $stmtPaciente->execute();
 
