@@ -14,8 +14,15 @@ import {
   EyeOff
 } from "lucide-react";
 
+interface CurrentUser {
+  id: number;
+  nome: string;
+  email: string;
+  papel: number;
+}
+
 interface LoginPageProps {
-  onLoginSuccess: (role: UserRole) => void;
+  onLoginSuccess: (user: CurrentUser) => void;
   onNavigate: (view: CurrentView) => void;
 }
 
@@ -37,6 +44,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   try {
     const response = await fetch("http://localhost:8080/usuario/store", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -55,14 +63,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
     console.log("Login realizado:", data);
 
-    const papel = data.usuario.papel;
-
-    if (papel === 1) {
-      onLoginSuccess("paciente");
-    } else if (papel === 2) {
-      onLoginSuccess("aluno");
-    } else if (papel === 3) {
-      onLoginSuccess("professor");
+    if (
+      data.usuario &&
+      [1, 2, 3].includes(Number(data.usuario.papel))
+    ) {
+      onLoginSuccess(data.usuario);
     } else {
       alert("Papel de usuário não reconhecido.");
     }
@@ -77,7 +82,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
   const handleQuickDemo = (role: UserRole) => {
     setSelectedRole(role);
-    setIsLoading(true);
+
     if (role === "paciente") {
       setEmail("mariana.albuquerque@email.com");
     } else if (role === "aluno") {
@@ -85,11 +90,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     } else {
       setEmail("tatiana.linhares@universidade.edu.br");
     }
-    setPassword("••••••••");
-    setTimeout(() => {
-      setIsLoading(false);
-      onLoginSuccess(role);
-    }, 400);
+
+    setPassword("");
   };
 
   return (

@@ -11,10 +11,19 @@ import {
   Shield
 } from "lucide-react";
 
+
+interface CurrentUser {
+  id: number;
+  nome: string;
+  email: string;
+  papel: number;
+}
+
 interface RegisterPageProps {
-  onRegisterSuccess: (role: UserRole) => void;
+  onRegisterSuccess: (user: CurrentUser) => void;
   onNavigate: (view: CurrentView) => void;
 }
+
 
 export const RegisterPage: React.FC<RegisterPageProps> = ({
   onRegisterSuccess,
@@ -56,9 +65,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       body = {
         nome: name,
         email: email,
+        telefone: phone,
         senha: password,
         data_nasc: birthDate,
-        telefone: phone,
       };
     }
 
@@ -68,6 +77,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       body = {
         nome: name,
         email: email,
+        telefone: phone,
         senha: password,
         matricula: Number(ra),
         semestre: Number(semester.replace("º Semestre", "")),
@@ -80,6 +90,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     body = {
       nome: name,
       email: email,
+      telefone: phone,
       senha: password,
       rp: crp,
     };
@@ -95,19 +106,44 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     const data = await response.json();
 
-    if (!response.ok) {
-      setError(data.erro || "Não foi possível realizar o cadastro.");
-      return;
-    }
 
-    onRegisterSuccess(role);
+if (!response.ok) {
+  setError(data.erro || "Não foi possível realizar o cadastro.");
+  return;
+}
 
-  } catch (error) {
-    setError("Não foi possível conectar ao servidor.");
-
-  } finally {
-    setIsLoading(false);
+const loginResponse = await fetch(
+  "http://localhost:8080/usuario/store",
+  {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      senha: password,
+    }),
   }
+  );
+
+  const loginData = await loginResponse.json();
+
+  if (!loginResponse.ok || !loginData.usuario) {
+    setError(
+      "Cadastro realizado, mas não foi possível entrar automaticamente. Faça login com seus dados."
+    );
+    return;
+  }
+
+  onRegisterSuccess(loginData.usuario);
+
+    } catch (error) {
+      setError("Não foi possível conectar ao servidor.");
+
+    } finally {
+      setIsLoading(false);
+    }
 };
 
   return (
