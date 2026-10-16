@@ -19,69 +19,102 @@ class AlunoController extends BaseController
         $this->casosDisponiveis();
     }
 
-    // não mexer pois já está funcionando!
+    
     public function casosDisponiveis()
     {
+        header('Content-Type: application/json; charset=utf-8');
 
+        if (empty($_SESSION['user_id'])) {
+            http_response_code(401);
 
-        if (isset($_SESSION['user_id'])) {
+            echo json_encode([
+                'erro' => 'Usuário não autenticado.'
+            ], JSON_UNESCAPED_UNICODE);
 
+            return;
+        }
+
+        try {
             $iduser = $_SESSION['user_id'];
 
-            try {
+            $pdo = Conexao::getConnection();
 
-                $pdo = Conexao::getConnection();
+            $sql = "
+                SELECT
+                    sa.id_solicitacao,
+                    p.nome_paciente,
+                    sa.especialidade,
+                    sa.horario_desejado,
+                    sa.observacao_inicial,
+                    sa.solicitacoes_status
+                FROM solicitacoes_atendimento sa
+                INNER JOIN paciente p
+                    ON sa.id_paciente = p.id_paciente
+                WHERE
+                    (
+                        sa.solicitacoes_status = 'APROVADA'
+                        AND sa.id_aluno IS NULL
+                    )
+                    OR sa.id_aluno = (
+                        SELECT a.id_aluno
+                        FROM aluno a
+                        WHERE a.id_usuario = ?
+                    )
+            ";
 
-                $sql = "SELECT solicitacoes_atendimento.id_solicitacao, usuario.nome_user, solicitacoes_atendimento.especialidade, solicitacoes_atendimento.horario_desejado, solicitacoes_atendimento.observacao_inicial, solicitacoes_atendimento.solicitacoes_status FROM  solicitacoes_atendimento
-                        INNER JOIN paciente ON solicitacoes_atendimento.id_paciente = paciente.id_paciente
-                        INNER JOIN usuario ON usuario.id_user = paciente.id_usuario 
-                        WHERE solicitacoes_atendimento.solicitacoes_status = 'APROVADA' AND solicitacoes_atendimento.id_aluno IS NULL OR solicitacoes_atendimento.id_aluno = (select aluno.id_aluno from aluno where aluno.id_usuario = ? ) ; ";
+            $result = $pdo->prepare($sql);
+            $result->execute([$iduser]);
 
-                $result = $pdo->prepare($sql);
+            $solicitacoes = $result->fetchAll(\PDO::FETCH_ASSOC);
 
-                $result->execute([$iduser]);
+            $casosDisponiveis = [];
+            $casosAssumidos = [];
 
-                $Minhassolicitacoes = $result->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($solicitacoes as $caso) {
+                switch ($caso['solicitacoes_status']) {
+                    case 'ASSUMIDA':
+                    case 'EM_ATENDIMENTO':
+                        $casosAssumidos[] = $caso;
+                        break;
 
-                $casosDisponiveis = [];
-                $casosAssumidos = [];
-
-                foreach ($Minhassolicitacoes as $Caso) {
-
-                    switch ($Caso['solicitacoes_status']) {
-                        case 'EM_ATENDIMENTO':
-                            $casosAssumidos[] = $Caso;
-                            break;
-
-                        default:
-                            $casosDisponiveis[] = $Caso;
-                            break;
-                    }
+                    default:
+                        $casosDisponiveis[] = $caso;
+                        break;
                 }
-
-                require dirname(__DIR__, 2). '/App/Views/Aluno/AreaAluno.php';
-
-            } catch (\Exception $e) {
-
-                echo "Deu erro ao listar casos disponíveis! ".$e->getMessage();
-
             }
+
+            http_response_code(200);
+
+            echo json_encode([
+                'casos_disponiveis' => $casosDisponiveis,
+                'casos_assumidos' => $casosAssumidos
+            ], JSON_UNESCAPED_UNICODE);
+
+        } catch (\Throwable $e) {
+            error_log(
+                'Erro ao listar casos do aluno: ' . $e->getMessage()
+            );
+
+            http_response_code(500);
+
+            echo json_encode([
+                'erro' => 'Erro interno ao listar os casos.'
+            ], JSON_UNESCAPED_UNICODE);
         }
     }
+
 
     // não está sendo utilizado!
     public function MeusCasos($id_aluno)
     {
 
-
         $pdo = Conexao::getConnection();
 
         try {
 
-            $sql = "SELECT solicitacoes_atendimento.id_paciente, solicitacoes_atendimento.id_solicitacao, usuario.nome_user, solicitacoes_atendimento.especialidade,solicitacoes_atendimento.horario_desejado, solicitacoes_atendimento.observacao_inicial, solicitacoes_atendimento.solicitacoes_status
+            $sql = "SELECT solicitacoes_atendimento.id_paciente, solicitacoes_atendimento.id_solicitacao, paciente.nome_paciente, solicitacoes_atendimento.especialidade,solicitacoes_atendimento.horario_desejado, solicitacoes_atendimento.observacao_inicial, solicitacoes_atendimento.solicitacoes_status
                     FROM solicitacoes_atendimento
                     INNER JOIN paciente ON paciente.id_paciente = solicitacoes_atendimento.id_paciente
-                    INNER JOIN usuario ON usuario.id_user = paciente.id_usuario
                     WHERE solicitacoes_atendimento.id_aluno = ? and solicitacoes_atendimento.solicitacoes_status = 'APROVADA'
                     ;";
 
@@ -115,32 +148,152 @@ class AlunoController extends BaseController
 
     }
 
+
     public function assumir()
     {
+        header('Content-Type: application/json; charset=utf-8');
 
-
-        if (!isset($_SESSION['user_id'])) {
-            echo "Aluno não autenticado!";
+        if (empty($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode([
+                'erro' => 'Aluno não autenticado.'
+            ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
-        $idSolicitacao = $_POST['id_solicitacao'];
-        $_SESSION['id_solicitacao'] = $idSolicitacao;
-        $iduser = $_SESSION['user_id'];
+        // O frontend enviará os dados usando FormData.
+        $idSolicitacao = filter_input(
+            INPUT_POST,
+            'id_solicitacao',
+            FILTER_VALIDATE_INT
+        );
 
-        $pdo = Conexao::getConnection();
+        if (!$idSolicitacao || $idSolicitacao <= 0) {
+            http_response_code(400);
+            echo json_encode([
+                'erro' => 'ID da solicitação inválido.'
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
 
-        $sql = "UPDATE solicitacoes_atendimento 
-        SET solicitacoes_status = 'ASSUMIDA',
-        id_aluno = (SELECT aluno.id_aluno FROM aluno WHERE id_usuario = ?) 
-        WHERE id_solicitacao = ?;";
+        try {
+            $pdo = Conexao::getConnection();
+            $idUsuario = $_SESSION['user_id'];
 
-        $alterar = $pdo->prepare($sql);
-        $alterar->execute([$iduser, $idSolicitacao]);
+            $sql = "
+                UPDATE solicitacoes_atendimento
+                SET
+                    solicitacoes_status = 'ASSUMIDA',
+                    id_aluno = (
+                        SELECT a.id_aluno
+                        FROM aluno a
+                        WHERE a.id_usuario = ?
+                        LIMIT 1
+                    )
+                WHERE id_solicitacao = ?
+                AND solicitacoes_status = 'APROVADA'
+                AND id_aluno IS NULL
+                AND EXISTS (
+                    SELECT 1
+                    FROM aluno a
+                    WHERE a.id_usuario = ?
+                )
+            ";
 
-        $sessao = new SessaoController();
-        $sessao->create();
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                $idUsuario,
+                $idSolicitacao,
+                $idUsuario
+            ]);
 
+            if ($stmt->rowCount() === 0) {
+                http_response_code(409);
+                echo json_encode([
+                    'erro' => 'Este caso não está mais disponível. Atualize a listagem.'
+                ], JSON_UNESCAPED_UNICODE);
+                return;
+            }
+
+            $_SESSION['id_solicitacao'] = $idSolicitacao;
+
+            http_response_code(200);
+            echo json_encode([
+                'mensagem' => 'Caso assumido com sucesso!',
+                'id_solicitacao' => $idSolicitacao
+            ], JSON_UNESCAPED_UNICODE);
+
+        } catch (\Throwable $e) {
+            error_log('Erro ao assumir caso: ' . $e->getMessage());
+
+            http_response_code(500);
+            echo json_encode([
+                'erro' => 'Erro interno ao assumir o caso.'
+            ], JSON_UNESCAPED_UNICODE);
+        }
+    }
+
+
+
+    public function dadosAluno()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        if (empty($_SESSION['user_id'])) {
+            http_response_code(401);
+
+            echo json_encode([
+                'erro' => 'Aluno não autenticado.'
+            ]);
+
+            return;
+        }
+
+        try {
+            $pdo = Conexao::getConnection();
+
+            $sql = "
+                SELECT
+                    usuario.nome_user AS nome,
+                    aluno.matricula AS matricula,
+                    aluno.semestre AS semestre
+                FROM aluno
+                INNER JOIN usuario
+                    ON usuario.id_user = aluno.id_usuario
+                WHERE aluno.id_usuario = ?
+                LIMIT 1
+            ";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$_SESSION['user_id']]);
+
+            $aluno = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$aluno) {
+                http_response_code(404);
+
+                echo json_encode([
+                    'erro' => 'Cadastro de aluno não encontrado.'
+                ]);
+
+                return;
+            }
+
+            http_response_code(200);
+
+            echo json_encode([
+                'aluno' => $aluno
+            ]);
+
+        } catch (\Throwable $e) {
+            error_log('Erro ao consultar dados do aluno: ' . $e->getMessage());
+
+            http_response_code(500);
+
+            echo json_encode([
+                'erro' => 'Erro interno ao consultar os dados do aluno.'
+            ]);
+        }
     }
 
 }
