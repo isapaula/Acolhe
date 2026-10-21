@@ -27,6 +27,8 @@ class Conexao
 
                 self::$instance->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
+                self::$instance->exec("SET time_zone = '-03:00'");
+
             } catch (\PDOException $e) {
 
                 die("Erro na conexão: " . $e->getMessage());
