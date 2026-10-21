@@ -147,12 +147,12 @@ export const CasesModal: React.FC<CasesModalProps> = ({
         {/* Cabeçalho */}
         <header className="flex items-center justify-between gap-3 border-b border-[#EBE5DA] bg-white px-4 py-3 sm:px-5">
           <div>
-            <h2
+            <h3
               id="cases-modal-title"
               className="font-serif text-lg font-bold text-[#1F3A52]"
             >
               Casos disponíveis
-            </h2>
+            </h3>
             <p className="mt-0.5 text-xs text-[#7A6F62]">
               Confira os casos aprovados para atendimento.
             </p>

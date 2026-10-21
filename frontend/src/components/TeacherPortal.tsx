@@ -507,9 +507,9 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-[#1F3A52] uppercase tracking-wide">
+                  <h4 className="text-xs font-bold text-[#1F3A52] uppercase tracking-wide">
                     Observação inicial do paciente
-                  </h3>
+                  </h4>
 
                   <div className="p-4 rounded-2xl bg-[#F9F6F0] border border-[#EBE5DA] text-sm text-[#1F3A52] leading-relaxed whitespace-pre-wrap">
                     {solicitacaoSelecionada.observacao_inicial?.trim() ||

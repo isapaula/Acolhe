@@ -105,7 +105,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
 
             <p className="text-sm text-[#7A6F62] max-w-md mx-auto leading-relaxed">
               Olá, <strong>{name || "Visitante"}</strong>! Seus dados foram encaminhados à equipe de acolhimento da
-              clínica-escola Acolhe. Em até 48 horas entraremos em contato para confirmar sua entrevista de triagem.
+              clínica-escola Acolhe. Em até 48 horas entraremos em contato para confirmar sua triagem.
             </p>
 
             <div className="p-4 rounded-2xl bg-white border border-[#EBE5DA] text-left text-xs text-[#5a7a8a] space-y-1">
