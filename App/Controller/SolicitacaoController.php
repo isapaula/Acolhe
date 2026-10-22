@@ -1,11 +1,18 @@
 <?php
 
 namespace App\Controller;
-
+use App\Service\SolicitacaoService;
 use App\Database\Conexao;
 
 class SolicitacaoController
 {
+
+    private function servico(): SolicitacaoService
+    {
+        return new SolicitacaoService(
+            Conexao::getConnection()
+        );
+    }
 
     public function aprovar()
     {
@@ -17,339 +24,202 @@ class SolicitacaoController
         $this->atualizarStatusProfessor('RECUSADA');
     }
 
-    public function store()
+    public function store(): void
     {
         header('Content-Type: application/json; charset=utf-8');
 
-
         if (empty($_SESSION['user_id'])) {
             http_response_code(401);
-
             echo json_encode([
-                'erro' => 'Usuário não autenticado.'
+                'mensagem' => 'Usuário não autenticado.'
             ]);
-
             return;
         }
 
-        $dados = json_decode(
-            file_get_contents('php://input'),
-            true
-        );
+        $dados = json_decode(file_get_contents('php://input'), true);
 
         if (!is_array($dados)) {
             http_response_code(400);
-
             echo json_encode([
-                'erro' => 'JSON inválido.'
+                'mensagem' => 'Dados inválidos.'
             ]);
-
             return;
         }
 
         $especialidade = $dados['especialidade'] ?? null;
-        $horario_desejado = $dados['selecthora'] ?? null;
+        $horarioDesejado = $dados['selecthora'] ?? null;
         $observacao = $dados['observacao'] ?? null;
 
         if (
             !is_string($especialidade) ||
             trim($especialidade) === '' ||
-            !is_string($horario_desejado) ||
-            trim($horario_desejado) === '' ||
+            !is_string($horarioDesejado) ||
+            trim($horarioDesejado) === '' ||
             !is_string($observacao)
         ) {
             http_response_code(400);
-
             echo json_encode([
-                'erro' => 'Dados da solicitação inválidos ou incompletos.'
+                'mensagem' => 'Preencha corretamente os dados da solicitação.'
             ]);
-
             return;
         }
 
-        $iduser = $_SESSION['user_id'];
-
         try {
-            $pdo = Conexao::getConnection();
+            $servico = $this->servico();
 
-            $stmt = $pdo->prepare(
-                "SELECT id_paciente
-                FROM paciente
-                WHERE id_usuario = ?"
+            $idPaciente = $servico->buscarIdPacientePorUsuario(
+                (int) $_SESSION['user_id']
             );
 
-            $stmt->execute([$iduser]);
-
-            $paciente = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-            if (!$paciente) {
+            if ($idPaciente === null) {
                 http_response_code(403);
-
                 echo json_encode([
-                    'erro' => 'Somente pacientes cadastrados podem solicitar atendimento.'
+                    'mensagem' => 'Somente pacientes cadastrados podem solicitar atendimento.'
                 ]);
-
                 return;
             }
 
-            $idPaciente = $paciente['id_paciente'];
-
-
-            $pdo->beginTransaction();
-
-            $stmt = $pdo->prepare(
-                "INSERT INTO solicitacoes_atendimento
-                    (id_paciente, especialidade, horario_desejado, observacao_inicial)
-                VALUES (?, ?, ?, ?)"
+            $idSolicitacao = $servico->criarSolicitacao(
+                $idPaciente,
+                $especialidade,
+                $horarioDesejado,
+                $observacao
             );
 
-            $stmt->execute([
-                $idPaciente,
-                trim($especialidade),
-                trim($horario_desejado),
-                trim($observacao)
-            ]);
-
-            $idSolicitacao = $pdo->lastInsertId();
-
-            $pdo->commit();
-
-            // 6. Retorna a resposta da API
             http_response_code(201);
-
             echo json_encode([
                 'mensagem' => 'Solicitação cadastrada com sucesso.',
                 'solicitacao' => [
                     'id' => $idSolicitacao,
                     'id_paciente' => $idPaciente,
                     'especialidade' => trim($especialidade),
-                    'horario_desejado' => trim($horario_desejado),
+                    'horario_desejado' => trim($horarioDesejado),
                     'observacao_inicial' => trim($observacao)
                 ]
-            ]);
+            ], JSON_UNESCAPED_UNICODE);
+        } catch (\PDOException $e) {
+            error_log('Erro ao cadastrar solicitação: ' . $e->getMessage());
 
-        
-        } catch (\Throwable $e) {
+            $codigoMySQL = (int) ($e->errorInfo[1] ?? 0);
 
-            if (isset($pdo) && $pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            error_log(
-                'Erro ao cadastrar solicitação: ' . $e->getMessage()
-            );
-
-            $erroInfo = $e instanceof \PDOException
-                ? $e->errorInfo
-                : null;
-
-            $sqlState = $erroInfo[0] ?? $e->getCode();
-            $codigoMySQL = $erroInfo[1] ?? null;
-            $mensagemErro = $e->getMessage();
-
-            $violacaoSolicitacaoAtiva =
-                $sqlState === '23000' &&
-                (int) $codigoMySQL === 1062 &&
-                str_contains(
-                    $mensagemErro,
-                    'uq_solicitacao_paciente_ativa'
-                );
-
-            if ($violacaoSolicitacaoAtiva) {
+            if (
+                $e->getCode() === '23000' &&
+                $codigoMySQL === 1062 &&
+                str_contains($e->getMessage(), 'uq_solicitacao_paciente_ativa')
+            ) {
                 http_response_code(409);
-
                 echo json_encode([
-                    'erro' => 'Você já possui uma solicitação de atendimento ativa.'
-                ]);
-
+                    'mensagem' => 'Você já possui uma solicitação de atendimento ativa.'
+                ], JSON_UNESCAPED_UNICODE);
                 return;
             }
 
             http_response_code(500);
-
             echo json_encode([
-                'erro' => 'Erro interno ao cadastrar a solicitação.'
-            ]);
-        }
+                'mensagem' => 'Erro interno ao cadastrar a solicitação.'
+            ], JSON_UNESCAPED_UNICODE);
+        } catch (\Throwable $e) {
+            error_log('Erro ao cadastrar solicitação: ' . $e->getMessage());
 
+            http_response_code(500);
+            echo json_encode([
+                'mensagem' => 'Erro interno ao cadastrar a solicitação.'
+            ], JSON_UNESCAPED_UNICODE);
+        }
     }
 
-
-    public function statusSolicitação($idpaciente)
-    {
-
-        $pdo = Conexao::getConnection();
-
-        try {
-
-            $consulta = $pdo->prepare("SELECT solicitacoes_atendimento.solicitacoes_status  AS status_solicitacao FROM paciente
-            INNER JOIN usuario ON usuario.id_user = paciente.id_usuario
-            INNER JOIN solicitacoes_atendimento ON paciente.id_paciente = solicitacoes_atendimento.id_paciente
-            WHERE solicitacoes_atendimento.id_paciente = :id_paciente
-            ;");
-
-            $consulta->execute([ 'id_paciente' => $idpaciente]);
-
-            // dessa forma o sistema pega apenas uma solicitação atendimento do paciente, para pegar todas é necessário o fetchAll.
-            $result  = $consulta->fetch(\PDO::FETCH_ASSOC);
-
-            return $result;
-
-
-        } catch (\Exception $e) {
-
-            error_log("Erro ao consultar o status da solicitação: ".$e);
-            echo "Erro ao consultar o status da solicitação: ".$e;
-
-        }
-
-    }
-
-    public function status()
+    public function status(): void
     {
         header('Content-Type: application/json; charset=utf-8');
 
-
         if (empty($_SESSION['user_id'])) {
             http_response_code(401);
-
             echo json_encode([
-                'erro' => 'Usuário não autenticado.'
+                'mensagem' => 'Usuário não autenticado.'
             ]);
-
             return;
         }
 
         try {
-            $pdo = Conexao::getConnection();
+            $servico = $this->servico();
 
-            $idUsuario = $_SESSION['user_id'];
-            $papel = (int) ($_SESSION['user_papel'] ?? 0);
-
-            if ($papel === 3) {
-                $stmt = $pdo->query(
-                    "SELECT
-                        sa.id_solicitacao,
-                        sa.id_paciente,
-                        sa.especialidade,
-                        sa.horario_desejado,
-                        sa.observacao_inicial,
-                        sa.solicitacoes_status,
-                        sa.created_at,
-                        p.nome_paciente AS nome_paciente
-                    FROM solicitacoes_atendimento sa
-                    INNER JOIN paciente p
-                        ON p.id_paciente = sa.id_paciente
-                    ORDER BY sa.id_solicitacao DESC"
-                );
-
-                $solicitacoes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            // Professor: visualiza todas as solicitações.
+            if ((int) ($_SESSION['user_papel'] ?? 0) === 3) {
+                $solicitacoes = $servico->listarSolicitacoesProfessor();
 
                 echo json_encode([
                     'solicitacoes' => $solicitacoes
-                ]);
+                ], JSON_UNESCAPED_UNICODE);
 
                 return;
             }
 
-            $stmt = $pdo->prepare(
-                "SELECT id_paciente
-                FROM paciente
-                WHERE id_usuario = ?"
+            // Paciente: visualiza somente a própria solicitação mais recente.
+            $idPaciente = $servico->buscarIdPacientePorUsuario(
+                (int) $_SESSION['user_id']
             );
 
-            $stmt->execute([$idUsuario]);
-            $paciente = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-            if (!$paciente) {
+            if ($idPaciente === null) {
                 http_response_code(403);
-
                 echo json_encode([
-                    'erro' => 'Usuário não possui cadastro de paciente.'
-                ]);
-
+                    'mensagem' => 'Usuário não possui cadastro de paciente.'
+                ], JSON_UNESCAPED_UNICODE);
                 return;
             }
 
-            $stmt = $pdo->prepare(
-                "SELECT
-                    id_solicitacao,
-                    especialidade,
-                    horario_desejado,
-                    solicitacoes_status
-                FROM solicitacoes_atendimento
-                WHERE id_paciente = ?
-                ORDER BY id_solicitacao DESC
-                LIMIT 1"
+            $solicitacao = $servico->buscarUltimaSolicitacaoPaciente(
+                $idPaciente
             );
-
-            $stmt->execute([$paciente['id_paciente']]);
-            $solicitacao = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             echo json_encode([
-                'solicitacao' => $solicitacao ?: null
-            ]);
-
+                'solicitacao' => $solicitacao
+            ], JSON_UNESCAPED_UNICODE);
         } catch (\Throwable $e) {
-            error_log(
-                'Erro ao consultar solicitações: ' . $e->getMessage()
-            );
+            error_log('Erro ao consultar solicitações: ' . $e->getMessage());
 
             http_response_code(500);
-
             echo json_encode([
-                'erro' => 'Erro interno ao consultar solicitações.'
-            ]);
+                'mensagem' => 'Erro interno ao consultar solicitações.'
+            ], JSON_UNESCAPED_UNICODE);
         }
     }
 
-    private function atualizarStatusProfessor(string $novoStatus)
+    private function atualizarStatusProfessor(string $novoStatus): void
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        // Estas operações aceitam somente POST.
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Allow: POST');
             http_response_code(405);
-
             echo json_encode([
-                'erro' => 'Método HTTP não permitido. Utilize POST.'
-            ]);
+                'mensagem' => 'Método não permitido.'
+            ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
-        // Verifica se existe uma sessão autenticada.
         if (empty($_SESSION['user_id'])) {
             http_response_code(401);
-
             echo json_encode([
-                'erro' => 'Usuário não autenticado.'
-            ]);
+                'mensagem' => 'Usuário não autenticado.'
+            ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
-        // O papel 3 corresponde ao professor neste projeto.
         if ((int) ($_SESSION['user_papel'] ?? 0) !== 3) {
             http_response_code(403);
-
             echo json_encode([
-                'erro' => 'Apenas professores podem analisar solicitações.'
-            ]);
+                'mensagem' => 'Apenas professores podem analisar solicitações.'
+            ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
-        // Lê o JSON enviado pelo React.
-        $dados = json_decode(
-            file_get_contents('php://input'),
-            true
-        );
+        $dados = json_decode(file_get_contents('php://input'), true);
 
         if (!is_array($dados)) {
             http_response_code(400);
-
             echo json_encode([
-                'erro' => 'JSON inválido.'
-            ]);
+                'mensagem' => 'Dados inválidos.'
+            ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
@@ -360,91 +230,51 @@ class SolicitacaoController
 
         if ($idSolicitacao === false || $idSolicitacao === null || $idSolicitacao < 1) {
             http_response_code(400);
-
             echo json_encode([
-                'erro' => 'ID da solicitação inválido.'
-            ]);
+                'mensagem' => 'ID da solicitação inválido.'
+            ], JSON_UNESCAPED_UNICODE);
             return;
         }
 
-        $pdo = null;
-
         try {
-            $pdo = \App\Database\Conexao::getConnection();
-            $pdo->beginTransaction();
-
-            // Bloqueia temporariamente o registro durante a análise.
-            $stmt = $pdo->prepare(
-                "SELECT solicitacoes_status
-                FROM solicitacoes_atendimento
-                WHERE id_solicitacao = ?
-                FOR UPDATE"
+            $resultado = $this->servico()->atualizarStatus(
+                $idSolicitacao,
+                $novoStatus
             );
 
-            $stmt->execute([$idSolicitacao]);
-
-            $solicitacao = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-            if (!$solicitacao) {
-                $pdo->rollBack();
-
+            if ($resultado === 'nao_encontrada') {
                 http_response_code(404);
-
                 echo json_encode([
-                    'erro' => 'Solicitação não encontrada.'
-                ]);
+                    'mensagem' => 'Solicitação não encontrada.'
+                ], JSON_UNESCAPED_UNICODE);
                 return;
             }
 
-            // Só é permitido analisar solicitações pendentes.
-            if ($solicitacao['solicitacoes_status'] !== 'AGUARDANDO_TRIAGEM') {
-                $pdo->rollBack();
-
+            if ($resultado === 'ja_analisada') {
                 http_response_code(409);
-
                 echo json_encode([
-                    'erro' => 'Esta solicitação já foi analisada ou não pode ser alterada.'
-                ]);
+                    'mensagem' => 'Esta solicitação já foi analisada ou não pode ser alterada.'
+                ], JSON_UNESCAPED_UNICODE);
                 return;
             }
 
-            $update = $pdo->prepare(
-                "UPDATE solicitacoes_atendimento
-                SET solicitacoes_status = ?
-                WHERE id_solicitacao = ?"
-            );
-
-            $update->execute([
-                $novoStatus,
-                $idSolicitacao
-            ]);
-
-            $pdo->commit();
+            $mensagem = $novoStatus === 'APROVADA'
+                ? 'Solicitação aprovada com sucesso.'
+                : 'Solicitação recusada com sucesso.';
 
             echo json_encode([
-                'mensagem' => $novoStatus === 'APROVADA'
-                    ? 'Solicitação aprovada com sucesso.'
-                    : 'Solicitação recusada com sucesso.',
+                'mensagem' => $mensagem,
                 'id_solicitacao' => $idSolicitacao,
                 'solicitacoes_status' => $novoStatus
-            ]);
-
+            ], JSON_UNESCAPED_UNICODE);
         } catch (\Throwable $e) {
-            if ($pdo instanceof \PDO && $pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
-
-            error_log(
-                'Erro ao atualizar solicitação: ' . $e->getMessage()
-            );
+            error_log('Erro ao atualizar solicitação: ' . $e->getMessage());
 
             http_response_code(500);
-
             echo json_encode([
-                'erro' => 'Erro interno ao atualizar a solicitação.'
-            ]);
+                'mensagem' => 'Erro interno ao atualizar a solicitação.'
+            ], JSON_UNESCAPED_UNICODE);
         }
-        }
-
+    }
 
 }

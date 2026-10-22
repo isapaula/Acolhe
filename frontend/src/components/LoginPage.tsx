@@ -80,20 +80,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   }
  };
 
-  const handleQuickDemo = (role: UserRole) => {
-    setSelectedRole(role);
-
-    if (role === "paciente") {
-      setEmail("mariana.albuquerque@email.com");
-    } else if (role === "aluno") {
-      setEmail("felipe.souza@universidade.edu.br");
-    } else {
-      setEmail("tatiana.linhares@universidade.edu.br");
-    }
-
-    setPassword("");
-  };
-
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-center watercolor-wash-hero relative">
       {/* Return to Home button */}
@@ -245,35 +231,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </button>
         </form>
 
-        {/* 1-Click Fast Demo Logins */}
-        <div className="pt-2 border-t border-[#F4F0EA] space-y-2">
-          <div className="text-center text-[11px] font-semibold text-[#7A6F62] uppercase tracking-wider">
-            Ou teste direto com 1 clique (Modo Demonstração):
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickDemo("paciente")}
-              className="py-1.5 px-2 rounded-lg bg-[#A3B8CC]/25 hover:bg-[#A3B8CC]/40 text-[#1F3A52] text-[11px] font-medium transition-colors cursor-pointer"
-            >
-              Demo Paciente
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo("aluno")}
-              className="py-1.5 px-2 rounded-lg bg-[#9CAF88]/25 hover:bg-[#9CAF88]/40 text-[#1F3A52] text-[11px] font-medium transition-colors cursor-pointer"
-            >
-              Demo Aluno
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo("professor")}
-              className="py-1.5 px-2 rounded-lg bg-[#B89C85]/25 hover:bg-[#B89C85]/40 text-[#1F3A52] text-[11px] font-medium transition-colors cursor-pointer"
-            >
-              Demo Professor
-            </button>
-          </div>
-        </div>
 
         {/* Link to Registration */}
         <div className="text-center pt-2">
