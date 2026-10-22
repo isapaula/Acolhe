@@ -6,47 +6,7 @@ use App\Database\Conexao;
 
 class SessaoController
 {
-    public function index()
-    {
-
-        if (isset($_SESSION['user_id'])) {
-
-            $iduser = $_SESSION['user_id'];
-
-            try {
-
-                $pdo = Conexao::getConnection();
-
-                $sql = "SELECT sessao.id_sessao, paciente.nome_paciente,  solicitacoes_atendimento.solicitacoes_status, sessao.data_sessao, sessao.hora_inicio , sessao.hora_fim, status_sessao FROM solicitacoes_atendimento
-                INNER JOIN aluno ON solicitacoes_atendimento.id_aluno = aluno.id_aluno
-                INNER JOIN paciente ON paciente.id_paciente = solicitacoes_atendimento.id_paciente
-                INNER JOIN sessao ON sessao.id_solicitacao = solicitacoes_atendimento.id_solicitacao WHERE aluno.id_usuario = ?;";
-
-                $select =  $pdo->prepare($sql);
-
-                $select->execute([$iduser]);
-
-                $result = $select->fetchAll(\PDO::FETCH_ASSOC);
-
-                require dirname(__DIR__, 2). '/App/Views/Aluno/Sessoes.php';
-
-
-            } catch (\PDOException $e) {
-
-                error_log("Não foi possível mostrar suas sessões!". $e->getMessage());
-                echo "Não foi possível mostrar suas sessões!". $e->getMessage();
-
-            }
-        }
-    }
-
-    public function create()
-    {
-
-        require dirname(__DIR__, 2). '/App/Views/Aluno/CriarSessao.php';
-    }
-
-    
+   
     public function store()
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -267,39 +227,6 @@ class SessaoController
         }
     }
 
-
-    public function updateStatus()
-    {
-
-        if (!isset($_POST['id_sessao'], $_POST['status'])) {
-            echo "Dados inválidos.";
-        }
-
-        $status = $_POST['status'];
-        $idSessao = $_POST['id_sessao'];
-
-        try {
-
-            $pdo = Conexao::getConnection();
-
-            $sql = "UPDATE sessao 
-                    SET status_sessao = ? 
-                    WHERE id_sessao = ? ";
-
-            $update = $pdo->prepare($sql);
-
-            $update->execute([$status, $idSessao]);
-
-            header("Location: /Psychology-clinic-project/public/sessao/index");
-            exit;
-
-        } catch (\Exception $e) {
-            error_log("Erro ao atualizar status da sessão: " . $e->getMessage());
-            echo "Não foi possível atualizar o status da sessão." . $e->getMessage();
-        }
-    }
-
-
     public function proximasSessoes()
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -424,7 +351,7 @@ class SessaoController
                     ON a.id_aluno = s.id_aluno
                 INNER JOIN usuario u
                     ON u.id_user = a.id_usuario
-                WHERE sa.id_paciente = ? AND s.status_sessao = 'AGENDADA'
+                WHERE sa.id_paciente = ? 
                 ORDER BY
                     s.data_sessao ASC,
                     s.hora_inicio ASC

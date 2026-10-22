@@ -6,11 +6,6 @@ use App\Database\Conexao;
 
 class UsuarioController
 {
-    public function login()
-    {
-
-        require dirname(__DIR__, 2). '/App/Views/Login.php';
-    }
 
     public function store()
     {

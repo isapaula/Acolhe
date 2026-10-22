@@ -18,7 +18,7 @@ class BaseController
         }
 
         if (!isset($_SESSION['user_id'])) {
-            header("Location: /Psychology-clinic-project/public/usuario/login");
+            header("Location: /");
             exit;
         }
 

@@ -18,9 +18,6 @@ export const TriageModal: React.FC<TriageModalProps> = ({
   onSolicitacaoCriada,
 }) => {
   const [step, setStep] = useState(1);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
   const [service, setService] = useState(defaultService);
   const [modality, setModality] = useState<"Presencial" | "Online">("Presencial");
   const [complaint, setComplaint] = useState("");
@@ -100,12 +97,12 @@ export const TriageModal: React.FC<TriageModalProps> = ({
             </div>
 
             <h3 className="font-serif text-2xl font-bold text-[#1F3A52]">
-              Inscrição de Triagem Recebida!
+              Solicitação Recebida!
             </h3>
 
             <p className="text-sm text-[#7A6F62] max-w-md mx-auto leading-relaxed">
-              Olá, <strong>{name || "Visitante"}</strong>! Seus dados foram encaminhados à equipe de acolhimento da
-              clínica-escola Acolhe. Em até 48 horas entraremos em contato para confirmar sua triagem.
+              Sua solicitação foi registrada com sucesso na clínica-escola Acolhe.
+  Você pode acompanhar o andamento pela Área do Paciente.
             </p>
 
             <div className="p-4 rounded-2xl bg-white border border-[#EBE5DA] text-left text-xs text-[#5a7a8a] space-y-1">
@@ -164,49 +161,6 @@ export const TriageModal: React.FC<TriageModalProps> = ({
             {step === 1 ? (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#1F3A52] mb-1">
-                    Nome Completo *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Como você prefere ser chamado(a)?"
-                    className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE5DA] text-[#1F3A52] focus:outline-none focus:border-[#4a8b7f]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1F3A52] mb-1">
-                      Telefone / WhatsApp *
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="(61) 99999-9999"
-                      className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE5DA] text-[#1F3A52] focus:outline-none focus:border-[#4a8b7f]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#1F3A52] mb-1">
-                      E-mail *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="seuemail@exemplo.com"
-                      className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-white border border-[#EBE5DA] text-[#1F3A52] focus:outline-none focus:border-[#4a8b7f]"
-                    />
-                  </div>
-                </div>
-
-                <div>
                     <label className="block text-xs font-semibold text-[#1F3A52] mb-1">
                       Horário desejado
                     </label>
@@ -223,9 +177,8 @@ export const TriageModal: React.FC<TriageModalProps> = ({
                       <option value="16:00">16:00</option>
                     </select>
                   </div>
+                  
                 <div>
-
-
                   <label className="block text-xs font-semibold text-[#1F3A52] mb-1">
                     Serviço de Interesse
                   </label>
@@ -244,10 +197,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
                 <div className="pt-3 flex justify-end">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (name && phone && email) setStep(2);
-                    }}
-                    disabled={!name || !phone || !email}
+                    onClick={() => setStep(2)}
                     className="px-6 py-2.5 rounded-xl bg-[#4a8b7f] disabled:opacity-50 text-white text-xs font-semibold hover:bg-[#3d756b] transition-colors cursor-pointer"
                   >
                     Próximo Passo

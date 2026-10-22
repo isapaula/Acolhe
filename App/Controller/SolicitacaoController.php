@@ -174,37 +174,6 @@ class SolicitacaoController
 
     }
 
-
-    public function statusSolicitação($idpaciente)
-    {
-
-        $pdo = Conexao::getConnection();
-
-        try {
-
-            $consulta = $pdo->prepare("SELECT solicitacoes_atendimento.solicitacoes_status  AS status_solicitacao FROM paciente
-            INNER JOIN usuario ON usuario.id_user = paciente.id_usuario
-            INNER JOIN solicitacoes_atendimento ON paciente.id_paciente = solicitacoes_atendimento.id_paciente
-            WHERE solicitacoes_atendimento.id_paciente = :id_paciente
-            ;");
-
-            $consulta->execute([ 'id_paciente' => $idpaciente]);
-
-            // dessa forma o sistema pega apenas uma solicitação atendimento do paciente, para pegar todas é necessário o fetchAll.
-            $result  = $consulta->fetch(\PDO::FETCH_ASSOC);
-
-            return $result;
-
-
-        } catch (\Exception $e) {
-
-            error_log("Erro ao consultar o status da solicitação: ".$e);
-            echo "Erro ao consultar o status da solicitação: ".$e;
-
-        }
-
-    }
-
     public function status()
     {
         header('Content-Type: application/json; charset=utf-8');
