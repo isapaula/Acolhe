@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Database\Conexao;
+use App\Service\SessaoService;
 
 class SessaoController
 {
@@ -39,7 +40,6 @@ class SessaoController
         $dataSessao = $dados['data_sessao'] ?? '';
         $horaInicio = $dados['hora_inicio'] ?? '';
         $horaFim = $dados['hora_fim'] ?? '';
-
 
         if (
             !$idSolicitacao ||
@@ -103,129 +103,69 @@ class SessaoController
         }
 
         try {
-            $pdo = \App\Database\Conexao::getConnection();
-            $idUsuario = $_SESSION['user_id'];
+            $servico = new SessaoService(
+                Conexao::getConnection()
+            );
 
-            // Confirma que a solicitação pertence ao aluno autenticado.
-            $sqlSolicitacao = " SELECT sa.id_solicitacao, sa.id_aluno, sa.solicitacoes_status FROM solicitacoes_atendimento sa
-                INNER JOIN aluno a ON a.id_aluno = sa.id_aluno WHERE sa.id_solicitacao = ? AND a.id_usuario = ? LIMIT 1 ";
-
-            $stmtSolicitacao = $pdo->prepare($sqlSolicitacao);
-            $stmtSolicitacao->execute([$idSolicitacao, $idUsuario]);
-            $solicitacao = $stmtSolicitacao->fetch(\PDO::FETCH_ASSOC);
-
-            if (!$solicitacao) {
-                http_response_code(403);
-                echo json_encode([
-                    'sucesso' => false,
-                    'erro' => 'A solicitação não existe ou não pertence a este aluno.'
-                ]);
-                return;
-            }
-
-            // Impede agendar uma sessão em uma data passada.
-            if ($dataSessao < date('Y-m-d')) {
-                http_response_code(400);
-                echo json_encode([
-                    'sucesso' => false,
-                    'erro' => 'Não é permitido agendar uma sessão em uma data passada.'
-                ]);
-                return;
-            }
-
-            $pdo->beginTransaction();
-
-            // Verifica conflito de horário com outra sessão do mesmo aluno.
-            $sqlConflito = " SELECT COUNT(*) FROM sessao WHERE id_aluno = ? AND data_sessao = ? AND hora_inicio < ? AND hora_fim > ? ";
-
-            $stmtConflito = $pdo->prepare($sqlConflito);
-            $stmtConflito->execute([
-                $solicitacao['id_aluno'],
-                $dataSessao,
-                $horaFim,
-                $horaInicio
-            ]);
-
-            if ((int) $stmtConflito->fetchColumn() > 0) {
-                $pdo->rollBack();
-
-                http_response_code(409);
-                echo json_encode([
-                    'sucesso' => false,
-                    'erro' => 'O aluno já possui uma sessão nesse intervalo de horário.'
-                ]);
-                return;
-            }
-
-            $sqlInsert = " INSERT INTO sessao (id_solicitacao, id_aluno,
-                    data_sessao,
-                    hora_inicio,
-                    hora_fim,
-                    status_sessao
-                )
-                VALUES (?, ?, ?, ?, ?, ?)
-            ";
-
-            $stmtInsert = $pdo->prepare($sqlInsert);
-            $stmtInsert->execute([
-                $idSolicitacao,
-                $solicitacao['id_aluno'],
+            $resultado = $servico->agendarSessao(
+                (int) $idSolicitacao,
+                (int) $_SESSION['user_id'],
                 $dataSessao,
                 $horaInicio,
-                $horaFim,
-                'AGENDADA'
-            ]);
+                $horaFim
+            );
 
-            $idSessao = (int) $pdo->lastInsertId();
+            switch ($resultado['status']) {
+                case 'nao_autorizada':
+                    http_response_code(403);
+                    echo json_encode([
+                        'sucesso' => false,
+                        'erro' => 'A solicitação não existe ou não pertence a este aluno.'
+                    ]);
+                    return;
 
-            $stmtUpdate = $pdo->prepare("
-                UPDATE solicitacoes_atendimento
-                SET solicitacoes_status = 'EM_ATENDIMENTO'
-                WHERE id_solicitacao = ?
-            ");
-            $stmtUpdate->execute([$idSolicitacao]);
+                case 'data_passada':
+                    http_response_code(400);
+                    echo json_encode([
+                        'sucesso' => false,
+                        'erro' => 'Não é permitido agendar uma sessão em uma data passada.'
+                    ]);
+                    return;
 
-            $pdo->commit();
+                case 'conflito':
+                    http_response_code(409);
+                    echo json_encode([
+                        'sucesso' => false,
+                        'erro' => 'O aluno já possui uma sessão nesse intervalo de horário.'
+                    ]);
+                    return;
 
-            http_response_code(201);
-            echo json_encode([
-                'sucesso' => true,
-                'mensagem' => 'Sessão agendada com sucesso.',
-                'sessao' => [
-                    'id_sessao' => $idSessao,
-                    'id_solicitacao' => (int) $idSolicitacao,
-                    'data_sessao' => $dataSessao,
-                    'hora_inicio' => $horaInicio,
-                    'hora_fim' => $horaFim,
-                    'status_sessao' => 'AGENDADA'
-                ]
-            ]);
-        } catch (\PDOException $e) {
-            if (isset($pdo) && $pdo->inTransaction()) {
-                $pdo->rollBack();
+                case 'agendada':
+                    http_response_code(201);
+                    echo json_encode([
+                        'sucesso' => true,
+                        'mensagem' => 'Sessão agendada com sucesso.',
+                        'sessao' => $resultado['sessao']
+                    ]);
+                    return;
+
+                default:
+                    throw new \RuntimeException(
+                        'Resultado inesperado ao agendar sessão.'
+                    );
             }
-
-            error_log('Erro ao agendar sessão: ' . $e->getMessage());
-
-            http_response_code(500);
-            echo json_encode([
-                'sucesso' => false,
-                'erro' => 'Não foi possível agendar a sessão.'
-            ]);
         } catch (\Throwable $e) {
-            if (isset($pdo) && $pdo->inTransaction()) {
-                $pdo->rollBack();
-            }
+        error_log('Erro ao agendar sessão: ' . $e->getMessage());
 
-            error_log('Erro inesperado ao agendar sessão: ' . $e->getMessage());
-
-            http_response_code(500);
-            echo json_encode([
-                'sucesso' => false,
-                'erro' => 'Ocorreu um erro inesperado ao agendar a sessão.'
-            ]);
-        }
+        http_response_code(500);
+        echo json_encode([
+            'sucesso' => false,
+            'erro' => 'Ocorreu um erro inesperado ao agendar a sessão.'
+        ]);
     }
+
+    }
+
 
     public function proximasSessoes()
     {
@@ -242,41 +182,15 @@ class SessaoController
         }
 
         try {
-            $pdo = \App\Database\Conexao::getConnection();
-            $idUsuario = $_SESSION['user_id'];
+            $servico = new SessaoService(
+                Conexao::getConnection()
+            );
 
-            $sql = "
-                SELECT
-                    s.id_sessao,
-                    s.id_solicitacao,
-                    p.nome_paciente,
-                    s.data_sessao,
-                    s.hora_inicio,
-                    s.hora_fim,
-                    s.status_sessao
-                FROM sessao s
-                INNER JOIN solicitacoes_atendimento sa
-                    ON sa.id_solicitacao = s.id_solicitacao
-                INNER JOIN paciente p
-                    ON p.id_paciente = sa.id_paciente
-                INNER JOIN aluno a
-                    ON a.id_aluno = s.id_aluno
-                WHERE a.id_usuario = ?
-                AND s.status_sessao = 'AGENDADA'
-                AND (
-                        s.data_sessao > CURDATE()
-                        OR (
-                            s.data_sessao = CURDATE()
-                            AND s.hora_inicio >= CURTIME()
-                        )
-                )
-                ORDER BY s.data_sessao ASC, s.hora_inicio ASC
-            ";
+            $idUsuario = (int) $_SESSION['user_id'];
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$idUsuario]);
-
-            $sessoes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $sessoes = $servico->listarProximasSessoes(
+                $idUsuario
+            );
 
             http_response_code(200);
 
@@ -313,18 +227,17 @@ class SessaoController
         }
 
         try {
-            $pdo = \App\Database\Conexao::getConnection();
-            $idUsuario = $_SESSION['user_id'];
+            $servico = new SessaoService(
+                Conexao::getConnection()
+            );
 
-            // Localiza o paciente associado ao usuário autenticado.
-            $sqlPaciente = " SELECT id_paciente FROM paciente WHERE id_usuario = ? LIMIT 1 ";
+            $idUsuario = (int) $_SESSION['user_id'];
 
-            $stmtPaciente = $pdo->prepare($sqlPaciente);
-            $stmtPaciente->execute([$idUsuario]);
+            $idPaciente = $servico->buscarIdPacientePorUsuario(
+                $idUsuario
+            );
 
-            $paciente = $stmtPaciente->fetch(\PDO::FETCH_ASSOC);
-
-            if (!$paciente) {
+            if ($idPaciente === null) {
                 http_response_code(403);
 
                 echo json_encode([
@@ -334,33 +247,9 @@ class SessaoController
                 return;
             }
 
-            // Busca somente as sessões vinculadas a esse paciente.
-            $sql = "
-                SELECT
-                    s.id_sessao,
-                    s.id_solicitacao,
-                    s.data_sessao,
-                    s.hora_inicio,
-                    s.hora_fim,
-                    s.status_sessao,
-                    u.nome_user AS nome_aluno
-                FROM sessao s
-                INNER JOIN solicitacoes_atendimento sa
-                    ON sa.id_solicitacao = s.id_solicitacao
-                INNER JOIN aluno a
-                    ON a.id_aluno = s.id_aluno
-                INNER JOIN usuario u
-                    ON u.id_user = a.id_usuario
-                WHERE sa.id_paciente = ? 
-                ORDER BY
-                    s.data_sessao ASC,
-                    s.hora_inicio ASC
-            ";
-
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$paciente['id_paciente']]);
-
-            $sessoes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $sessoes = $servico->listarSessoesPaciente(
+                $idPaciente
+            );
 
             http_response_code(200);
 
@@ -388,43 +277,29 @@ class SessaoController
 
         if (empty($_SESSION['user_id'])) {
             http_response_code(401);
+
             echo json_encode([
                 'erro' => 'Aluno não autenticado.'
             ], JSON_UNESCAPED_UNICODE);
+
             return;
         }
 
         try {
-            $pdo = Conexao::getConnection();
-            $idUsuario = $_SESSION['user_id'];
+            $servico = new SessaoService(
+                Conexao::getConnection()
+            );
 
-            $sql = "
-                SELECT
-                    s.id_sessao,
-                    s.id_solicitacao,
-                    p.nome_paciente,
-                    s.data_sessao,
-                    s.hora_inicio,
-                    s.hora_fim,
-                    s.status_sessao
-                FROM sessao s
-                INNER JOIN solicitacoes_atendimento sa
-                    ON sa.id_solicitacao = s.id_solicitacao
-                INNER JOIN paciente p
-                    ON p.id_paciente = sa.id_paciente
-                INNER JOIN aluno a
-                    ON a.id_aluno = s.id_aluno
-                WHERE a.id_usuario = ?
-                AND s.status_sessao = 'AGENDADA'
-                AND TIMESTAMP(s.data_sessao, s.hora_fim) < NOW()
-                ORDER BY s.data_sessao ASC, s.hora_inicio ASC
-            ";
+            $idUsuario = (int) $_SESSION['user_id'];
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$idUsuario]);
+            $sessoes = $servico->listarSessoesAguardandoRegistro(
+                $idUsuario
+            );
+
+            http_response_code(200);
 
             echo json_encode([
-                'sessoes' => $stmt->fetchAll(\PDO::FETCH_ASSOC)
+                'sessoes' => $sessoes
             ], JSON_UNESCAPED_UNICODE);
 
         } catch (\Throwable $e) {
@@ -434,6 +309,7 @@ class SessaoController
             );
 
             http_response_code(500);
+
             echo json_encode([
                 'erro' => 'Não foi possível consultar as sessões aguardando registro.'
             ], JSON_UNESCAPED_UNICODE);
@@ -471,10 +347,7 @@ class SessaoController
 
         $observacao = $dados['observacao'] ?? '';
 
-        if (
-            !$idSessao ||
-            !is_string($observacao)
-        ) {
+        if (!$idSessao || !is_string($observacao)) {
             http_response_code(400);
             echo json_encode([
                 'sucesso' => false,
@@ -495,99 +368,64 @@ class SessaoController
         }
 
         try {
-            $pdo = Conexao::getConnection();
-            $idUsuario = $_SESSION['user_id'];
+            $servico = new SessaoService(
+                Conexao::getConnection()
+            );
 
-            // Confirma que a sessão pertence ao aluno autenticado.
-            $sql = "
-                SELECT
-                    s.id_sessao,
-                    s.status_sessao,
-                    TIMESTAMP(s.data_sessao, s.hora_fim) AS fim_sessao
-                FROM sessao s
-                INNER JOIN aluno a
-                    ON a.id_aluno = s.id_aluno
-                WHERE s.id_sessao = ?
-                AND a.id_usuario = ?
-                LIMIT 1
-            ";
+            $resultado = $servico->registrarRealizacao(
+                (int) $idSessao,
+                (int) $_SESSION['user_id'],
+                $observacao
+            );
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$idSessao, $idUsuario]);
-            $sessao = $stmt->fetch(\PDO::FETCH_ASSOC);
+            switch ($resultado) {
+                case 'nao_encontrada':
+                    http_response_code(404);
+                    echo json_encode([
+                        'sucesso' => false,
+                        'erro' => 'Sessão não encontrada para este aluno.'
+                    ], JSON_UNESCAPED_UNICODE);
+                    return;
 
-            if (!$sessao) {
-                http_response_code(404);
-                echo json_encode([
-                    'sucesso' => false,
-                    'erro' => 'Sessão não encontrada para este aluno.'
-                ], JSON_UNESCAPED_UNICODE);
-                return;
+                case 'indisponivel':
+                    http_response_code(409);
+                    echo json_encode([
+                        'sucesso' => false,
+                        'erro' => 'Esta sessão já foi registrada ou não está disponível para registro.'
+                    ], JSON_UNESCAPED_UNICODE);
+                    return;
+
+                case 'horario_futuro':
+                    http_response_code(400);
+                    echo json_encode([
+                        'sucesso' => false,
+                        'erro' => 'Só é possível registrar a realização após o horário de término da sessão.'
+                    ], JSON_UNESCAPED_UNICODE);
+                    return;
+
+                case 'atualizacao_falhou':
+                    http_response_code(409);
+                    echo json_encode([
+                        'sucesso' => false,
+                        'erro' => 'Não foi possível registrar a sessão. Atualize a lista e tente novamente.'
+                    ], JSON_UNESCAPED_UNICODE);
+                    return;
+
+                case 'realizada':
+                    http_response_code(200);
+                    echo json_encode([
+                        'sucesso' => true,
+                        'mensagem' => 'Realização da sessão registrada com sucesso.',
+                        'id_sessao' => (int) $idSessao,
+                        'status_sessao' => 'REALIZADA'
+                    ], JSON_UNESCAPED_UNICODE);
+                    return;
+
+                default:
+                    throw new \RuntimeException(
+                        'Resultado inesperado ao registrar realização da sessão.'
+                    );
             }
-
-            if ($sessao['status_sessao'] !== 'AGENDADA') {
-                http_response_code(409);
-                echo json_encode([
-                    'sucesso' => false,
-                    'erro' => 'Esta sessão já foi registrada ou não está disponível para registro.'
-                ], JSON_UNESCAPED_UNICODE);
-                return;
-            }
-
-            // O horário é validado pelo banco, não pelo relógio do navegador.
-            $stmtHorario = $pdo->prepare("
-                SELECT TIMESTAMP(data_sessao, hora_fim) < NOW()
-                FROM sessao
-                WHERE id_sessao = ?
-            ");
-            $stmtHorario->execute([$idSessao]);
-
-            if (!(bool) $stmtHorario->fetchColumn()) {
-                http_response_code(400);
-                echo json_encode([
-                    'sucesso' => false,
-                    'erro' => 'Só é possível registrar a realização após o horário de término da sessão.'
-                ], JSON_UNESCAPED_UNICODE);
-                return;
-            }
-
-            // Atualiza somente se a sessão ainda estiver aguardando registro.
-            $sqlUpdate = "
-                UPDATE sessao s
-                INNER JOIN aluno a ON a.id_aluno = s.id_aluno
-                SET
-                    s.status_sessao = 'REALIZADA',
-                    s.observacao = ?
-                WHERE s.id_sessao = ?
-                AND a.id_usuario = ?
-                AND s.status_sessao = 'AGENDADA'
-                AND TIMESTAMP(s.data_sessao, s.hora_fim) < NOW()
-            ";
-
-            $stmtUpdate = $pdo->prepare($sqlUpdate);
-            $stmtUpdate->execute([
-                $observacao !== '' ? $observacao : null,
-                $idSessao,
-                $idUsuario
-            ]);
-
-            if ($stmtUpdate->rowCount() !== 1) {
-                http_response_code(409);
-                echo json_encode([
-                    'sucesso' => false,
-                    'erro' => 'Não foi possível registrar a sessão. Atualize a lista e tente novamente.'
-                ], JSON_UNESCAPED_UNICODE);
-                return;
-            }
-
-            http_response_code(200);
-            echo json_encode([
-                'sucesso' => true,
-                'mensagem' => 'Realização da sessão registrada com sucesso.',
-                'id_sessao' => (int) $idSessao,
-                'status_sessao' => 'REALIZADA'
-            ], JSON_UNESCAPED_UNICODE);
-
         } catch (\Throwable $e) {
             error_log(
                 'Erro ao registrar realização da sessão: '
@@ -601,7 +439,6 @@ class SessaoController
             ], JSON_UNESCAPED_UNICODE);
         }
     }
-
 
     public function sessoesRealizadasAluno()
     {
@@ -618,37 +455,15 @@ class SessaoController
         }
 
         try {
-            $pdo = \App\Database\Conexao::getConnection();
-            $idUsuario = $_SESSION['user_id'];
+            $servico = new SessaoService(
+                Conexao::getConnection()
+            );
 
-            $sql = "
-                SELECT
-                    s.id_sessao,
-                    s.id_solicitacao,
-                    p.nome_paciente,
-                    s.data_sessao,
-                    s.hora_inicio,
-                    s.hora_fim,
-                    s.status_sessao,
-                    s.observacao
-                FROM sessao s
-                INNER JOIN solicitacoes_atendimento sa
-                    ON sa.id_solicitacao = s.id_solicitacao
-                INNER JOIN paciente p
-                    ON p.id_paciente = sa.id_paciente
-                INNER JOIN aluno a
-                    ON a.id_aluno = s.id_aluno
-                WHERE a.id_usuario = ?
-                AND s.status_sessao = 'REALIZADA'
-                ORDER BY
-                    s.data_sessao DESC,
-                    s.hora_inicio DESC
-            ";
+            $idUsuario = (int) $_SESSION['user_id'];
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$idUsuario]);
-
-            $sessoes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $sessoes = $servico->listarSessoesRealizadasAluno(
+                $idUsuario
+            );
 
             http_response_code(200);
 

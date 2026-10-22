@@ -20,6 +20,7 @@ interface Solicitacao {
   solicitacoes_status: string;
   created_at: string;
   nome_paciente: string;
+  nome_aluno: string | null;
 }
 
 interface TeacherPortalProps {
@@ -431,6 +432,13 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
                       <div className="mt-1 text-[11px] text-[#7A6F62] line-clamp-2">
                         {solicitacao.especialidade}
                       </div>
+                      <div className="mt-2 text-[11px] text-[#5a7a8a]">
+                          <span className="font-semibold">Aluno responsável: </span>
+                          {solicitacao.nome_aluno?.trim() ||
+                            (solicitacao.solicitacoes_status === "RECUSADA"
+                              ? "Nenhum aluno atribuído — solicitação recusada"
+                              : "Sem aluno atribuído")}
+                        </div>
 
                       <div className="mt-2 text-[10px] text-[#7A6F62]">
                         Criada em {formatarData(solicitacao.created_at)}
@@ -504,6 +512,19 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
                       )}
                     </strong>
                   </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#F9F6F0] border border-[#EBE5DA]">
+                  <span className="text-[#7A6F62] block text-[11px]">
+                    Aluno responsável
+                  </span>
+
+                  <strong className="text-sm text-[#1F3A52]">
+                    {solicitacaoSelecionada.nome_aluno?.trim() ||
+                      (solicitacaoSelecionada.solicitacoes_status === "RECUSADA"
+                        ? "Nenhum aluno atribuído — solicitação recusada"
+                        : "Sem aluno atribuído")}
+                  </strong>
                 </div>
 
                 <div className="space-y-2">
