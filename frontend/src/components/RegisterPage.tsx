@@ -47,6 +47,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
@@ -55,10 +56,13 @@ const handleSubmit = async (e: React.FormEvent) => {
   setIsLoading(true);
   setError("");
 
+  let etapa = "inicialização";
+  let endpoint = "";
+
   try {
-    let endpoint = "";
     let body = {};
 
+    // Define endpoint e dados conforme o perfil
     if (role === "paciente") {
       endpoint = "http://localhost:8080/auth/paciente";
 
@@ -84,17 +88,25 @@ const handleSubmit = async (e: React.FormEvent) => {
       };
     }
 
-  if (role === "professor") {
-    endpoint = "http://localhost:8080/auth/professor";
+    if (role === "professor") {
+      endpoint = "http://localhost:8080/auth/professor";
 
-    body = {
-      nome: name,
-      email: email,
-      telefone: phone,
-      senha: password,
-      rp: crp,
-    };
-  }
+      body = {
+        nome: name,
+        email: email,
+        telefone: phone,
+        senha: password,
+        rp: crp,
+      };
+    }
+
+    // Etapa 1: Cadastro
+    etapa = "cadastro";
+
+    console.info("[Cadastro] Enviando requisição:", {
+      etapa,
+      endpoint,
+    });
 
     const response = await fetch(endpoint, {
       method: "POST",
@@ -104,47 +116,82 @@ const handleSubmit = async (e: React.FormEvent) => {
       body: JSON.stringify(body),
     });
 
+    console.info("[Cadastro] Resposta recebida:", {
+      status: response.status,
+      ok: response.ok,
+    });
+
     const data = await response.json();
 
+    if (!response.ok) {
+      console.error("[Cadastro] API retornou erro:", {
+        status: response.status,
+        resposta: data,
+      });
 
-if (!response.ok) {
-  setError(data.erro || "Não foi possível realizar o cadastro.");
-  return;
-}
-
-const loginResponse = await fetch(
-  "http://localhost:8080/usuario/store",
-  {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email,
-      senha: password,
-    }),
-  }
-  );
-
-  const loginData = await loginResponse.json();
-
-  if (!loginResponse.ok || !loginData.usuario) {
-    setError(
-      "Cadastro realizado, mas não foi possível entrar automaticamente. Faça login com seus dados."
-    );
-    return;
-  }
-
-  onRegisterSuccess(loginData.usuario);
-
-    } catch (error) {
-      setError("Não foi possível conectar ao servidor.");
-
-    } finally {
-      setIsLoading(false);
+      setError(data.erro || "Não foi possível realizar o cadastro.");
+      return;
     }
+
+    // Etapa 2: Login automático
+    etapa = "login automático";
+    endpoint = "http://localhost:8080/usuario/store";
+
+    console.info("[Cadastro] Enviando requisição:", {
+      etapa,
+      endpoint,
+    });
+
+    const loginResponse = await fetch(endpoint, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        senha: password,
+      }),
+    });
+
+    console.info("[Cadastro] Resposta do login:", {
+      status: loginResponse.status,
+      ok: loginResponse.ok,
+    });
+
+    const loginData = await loginResponse.json();
+
+    if (!loginResponse.ok || !loginData.usuario) {
+      console.error("[Cadastro] Falha no login automático:", {
+        status: loginResponse.status,
+        resposta: loginData,
+      });
+
+      setError(
+        "Cadastro realizado, mas não foi possível entrar automaticamente. Faça login com seus dados."
+      );
+
+      return;
+    }
+
+    console.info("[Cadastro] Cadastro e login concluídos com sucesso.");
+
+    onRegisterSuccess(loginData.usuario);
+
+  } catch (error) {
+    console.error("[Cadastro] Falha na requisição:", {
+      etapa,
+      endpoint,
+      erro: error,
+    });
+
+    setError("Não foi possível conectar ao servidor.");
+
+  } finally {
+    setIsLoading(false);
+  }
 };
+
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-center items-center watercolor-wash-hero relative">
