@@ -177,7 +177,25 @@ const handleSubmit = async (e: React.FormEvent) => {
       ok: loginResponse.ok,
     });
 
-    const loginData = await loginResponse.json();
+    const loginResponseText = await loginResponse.text();
+
+    console.info("[Cadastro] Resposta bruta do login:", {
+      etapa,
+      endpoint,
+      status: loginResponse.status,
+      contentType: loginResponse.headers.get("content-type"),
+      resposta: loginResponseText,
+    });
+
+    let loginData;
+
+    try {
+      loginData = JSON.parse(loginResponseText);
+    } catch {
+      throw new Error(
+        `Login retornou resposta inválida. HTTP ${loginResponse.status}: ${loginResponseText.substring(0, 500)}`
+      );
+    }
 
     if (!loginResponse.ok || !loginData.usuario) {
       console.error("[Cadastro] Falha no login automático:", {
@@ -197,13 +215,17 @@ const handleSubmit = async (e: React.FormEvent) => {
     onRegisterSuccess(loginData.usuario);
 
   } catch (error) {
-    console.error("[Cadastro] Falha na requisição:", {
-      etapa,
-      endpoint,
-      erro: error,
-    });
+      console.error("[Cadastro] Falha na requisição:", {
+        etapa,
+        endpoint,
+        erro: error,
+        mensagem:
+          error instanceof Error ? error.message : String(error),
+      });
 
-    setError("Não foi possível conectar ao servidor.");
+      setError(
+        `Falha na etapa "${etapa}". ${error instanceof Error ? error.message : String(error)}`
+      );
 
   } finally {
     setIsLoading(false);
