@@ -14,10 +14,10 @@ class Conexao
     public static function getConnection()
     {
 
-        $host = $_ENV['DB_HOST'];
-        $db = $_ENV['DB_DATABASE'];
-        $user = $_ENV['DB_USERNAME'];
-        $pass = $_ENV['DB_PASSWORD'];
+        $host = 'mysql';
+        $db = 'clinica';
+        $user = 'root';
+        $pass = 'root';
 
         if (self::$instance === null && isset($host, $db, $user, $pass)) {
 

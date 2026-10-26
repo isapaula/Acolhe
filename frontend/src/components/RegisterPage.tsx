@@ -121,7 +121,25 @@ const handleSubmit = async (e: React.FormEvent) => {
       ok: response.ok,
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+
+    console.info("[Cadastro] Resposta bruta da API:", {
+      etapa,
+      endpoint,
+      status: response.status,
+      contentType: response.headers.get("content-type"),
+      resposta: responseText,
+    });
+
+    let data;
+
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        `Resposta não é JSON. HTTP ${response.status}: ${responseText.substring(0, 500)}`
+      );
+    }
 
     if (!response.ok) {
       console.error("[Cadastro] API retornou erro:", {
