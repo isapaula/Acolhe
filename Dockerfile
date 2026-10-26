@@ -4,7 +4,11 @@ RUN apt-get update \
     && apt-get install -y unzip libzip-dev \
     && docker-php-ext-install pdo_mysql zip
 
-RUN a2enmod rewrite
+RUN a2enmod rewrite headers
+
+COPY apache-cors.conf /etc/apache2/conf-available/cors.conf
+
+RUN a2enconf cors
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
