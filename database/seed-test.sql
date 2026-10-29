@@ -58,7 +58,112 @@ ON DUPLICATE KEY UPDATE
     ativo = 1;
 
 -- -----------------------------------------------------
--- 2. PACIENTE PARA TESTAR APROVAÇÃO
+-- 2. ALUNOS DE TESTE
+-- -----------------------------------------------------
+
+-- ALUNO 1
+INSERT INTO usuario (
+    nome_user,
+    email_user,
+    telefone,
+    senha_user,
+    id_papel,
+    ativo
+)
+VALUES (
+    'Aluno Teste 1',
+    'aluno.teste1@acolhe.local',
+    '11999990004',
+    @senha_hash,
+    2,
+    1
+)
+ON DUPLICATE KEY UPDATE
+    nome_user = VALUES(nome_user),
+    senha_user = VALUES(senha_user),
+    id_papel = VALUES(id_papel),
+    ativo = 1;
+
+SET @id_usuario_aluno1 = (
+    SELECT id_user
+    FROM usuario
+    WHERE email_user = 'aluno.teste1@acolhe.local'
+);
+
+INSERT INTO usuario_papel (id_usuario, id_papel)
+VALUES (@id_usuario_aluno1, 2)
+ON DUPLICATE KEY UPDATE id_papel = VALUES(id_papel);
+
+INSERT INTO aluno (
+    id_usuario,
+    matricula,
+    semestre,
+    ativo
+)
+VALUES (
+    @id_usuario_aluno1,
+    990001,
+    5,
+    1
+)
+ON DUPLICATE KEY UPDATE
+    matricula = VALUES(matricula),
+    semestre = VALUES(semestre),
+    ativo = 1;
+
+
+-- ALUNO 2
+INSERT INTO usuario (
+    nome_user,
+    email_user,
+    telefone,
+    senha_user,
+    id_papel,
+    ativo
+)
+VALUES (
+    'Aluno Teste 2',
+    'aluno.teste2@acolhe.local',
+    '11999990005',
+    @senha_hash,
+    2,
+    1
+)
+ON DUPLICATE KEY UPDATE
+    nome_user = VALUES(nome_user),
+    senha_user = VALUES(senha_user),
+    id_papel = VALUES(id_papel),
+    ativo = 1;
+
+SET @id_usuario_aluno2 = (
+    SELECT id_user
+    FROM usuario
+    WHERE email_user = 'aluno.teste2@acolhe.local'
+);
+
+INSERT INTO usuario_papel (id_usuario, id_papel)
+VALUES (@id_usuario_aluno2, 2)
+ON DUPLICATE KEY UPDATE id_papel = VALUES(id_papel);
+
+INSERT INTO aluno (
+    id_usuario,
+    matricula,
+    semestre,
+    ativo
+)
+VALUES (
+    @id_usuario_aluno2,
+    990002,
+    5,
+    1
+)
+ON DUPLICATE KEY UPDATE
+    matricula = VALUES(matricula),
+    semestre = VALUES(semestre),
+    ativo = 1;
+
+-- -----------------------------------------------------
+-- 3. PACIENTE PARA TESTAR APROVAÇÃO
 -- -----------------------------------------------------
 
 INSERT INTO usuario (
@@ -117,7 +222,7 @@ SET @id_paciente_aprovacao = (
 );
 
 -- -----------------------------------------------------
--- 3. PACIENTE PARA TESTAR RECUSA
+-- 4. PACIENTE PARA TESTAR RECUSA
 -- -----------------------------------------------------
 
 INSERT INTO usuario (
@@ -176,7 +281,7 @@ SET @id_paciente_recusa = (
 );
 
 -- -----------------------------------------------------
--- 4. SOLICITAÇÕES PENDENTES PARA A TRIAGEM
+-- 5. SOLICITAÇÕES PENDENTES PARA A TRIAGEM
 -- -----------------------------------------------------
 
 -- Remove primeiro os registros dependentes das solicitações
