@@ -190,7 +190,6 @@ SET @id_paciente_aprovacao = (
     WHERE id_usuario = @id_usuario_aprovacao
 );
 
-
 -- -----------------------------------------------------
 -- 4. PACIENTE PARA TESTAR RECUSA
 -- -----------------------------------------------------
@@ -387,7 +386,6 @@ WHERE id_paciente IN (
     @id_paciente_atribuicao2
 );
 
-
 -- -----------------------------------------------------
 -- 7. SOLICITAÇÕES PENDENTES PARA TESTAR TRIAGEM
 -- -----------------------------------------------------
@@ -417,7 +415,6 @@ VALUES
     'Solicitação criada para testar o fluxo de recusa.',
     'AGUARDANDO_TRIAGEM'
 );
-
 
 -- -----------------------------------------------------
 -- 8. SOLICITAÇÕES APROVADAS PARA TESTAR ATRIBUIÇÃO
