@@ -346,6 +346,109 @@ SET @id_paciente_atribuicao2 = (
     WHERE id_usuario = @id_usuario_atribuicao2
 );
 
+-- -----------------------------------------------------
+-- 5.3. PACIENTE EXCLUSIVO PARA TESTAR AGENDAMENTO
+-- -----------------------------------------------------
+
+INSERT INTO usuario (
+    nome_user, email_user, telefone, senha_user,
+    id_papel, ativo
+)
+VALUES (
+    'Paciente Teste Agendamento',
+    'paciente.agendamento@acolhe.local',
+    '11999990008',
+    @senha_hash,
+    1,
+    1
+)
+ON DUPLICATE KEY UPDATE
+    nome_user = VALUES(nome_user),
+    senha_user = VALUES(senha_user),
+    id_papel = VALUES(id_papel),
+    ativo = 1;
+
+SET @id_usuario_agendamento = (
+    SELECT id_user
+    FROM usuario
+    WHERE email_user = 'paciente.agendamento@acolhe.local'
+);
+
+INSERT INTO usuario_papel (id_usuario, id_papel)
+VALUES (@id_usuario_agendamento, 1)
+ON DUPLICATE KEY UPDATE id_papel = VALUES(id_papel);
+
+INSERT INTO paciente (
+    id_usuario, nome_paciente, data_nascimento, ativo
+)
+VALUES (
+    @id_usuario_agendamento,
+    'Paciente Teste Agendamento',
+    '1993-08-15',
+    1
+)
+ON DUPLICATE KEY UPDATE
+    nome_paciente = VALUES(nome_paciente),
+    data_nascimento = VALUES(data_nascimento),
+    ativo = 1;
+
+SET @id_paciente_agendamento = (
+    SELECT id_paciente
+    FROM paciente
+    WHERE id_usuario = @id_usuario_agendamento
+);
+
+-- -----------------------------------------------------
+-- 5.4. PACIENTE EXCLUSIVO PARA TESTAR PRÓXIMAS SESSÕES
+-- -----------------------------------------------------
+
+INSERT INTO usuario (
+    nome_user, email_user, telefone, senha_user,
+    id_papel, ativo
+)
+VALUES (
+    'Paciente Teste Proximas Sessoes',
+    'paciente.proximas@acolhe.local',
+    '11999990009',
+    @senha_hash,
+    1,
+    1
+)
+ON DUPLICATE KEY UPDATE
+    nome_user = VALUES(nome_user),
+    senha_user = VALUES(senha_user),
+    id_papel = VALUES(id_papel),
+    ativo = 1;
+
+SET @id_usuario_proximas = (
+    SELECT id_user
+    FROM usuario
+    WHERE email_user = 'paciente.proximas@acolhe.local'
+);
+
+INSERT INTO usuario_papel (id_usuario, id_papel)
+VALUES (@id_usuario_proximas, 1)
+ON DUPLICATE KEY UPDATE id_papel = VALUES(id_papel);
+
+INSERT INTO paciente (
+    id_usuario, nome_paciente, data_nascimento, ativo
+)
+VALUES (
+    @id_usuario_proximas,
+    'Paciente Teste Proximas Sessoes',
+    '1991-06-20',
+    1
+)
+ON DUPLICATE KEY UPDATE
+    nome_paciente = VALUES(nome_paciente),
+    data_nascimento = VALUES(data_nascimento),
+    ativo = 1;
+
+SET @id_paciente_proximas = (
+    SELECT id_paciente
+    FROM paciente
+    WHERE id_usuario = @id_usuario_proximas
+);
 
 -- -----------------------------------------------------
 -- 6. LIMPEZA DAS SOLICITAÇÕES DOS QUATRO PACIENTES
@@ -360,7 +463,9 @@ WHERE id_solicitacao IN (
         @id_paciente_aprovacao,
         @id_paciente_recusa,
         @id_paciente_atribuicao1,
-        @id_paciente_atribuicao2
+        @id_paciente_atribuicao2,
+        @id_paciente_agendamento,
+        @id_paciente_proximas
     )
 );
 
@@ -373,7 +478,9 @@ WHERE id_solicitacao IN (
         @id_paciente_aprovacao,
         @id_paciente_recusa,
         @id_paciente_atribuicao1,
-        @id_paciente_atribuicao2
+        @id_paciente_atribuicao2,
+        @id_paciente_agendamento,
+        @id_paciente_proximas
     )
 );
 
@@ -383,7 +490,9 @@ WHERE id_paciente IN (
     @id_paciente_aprovacao,
     @id_paciente_recusa,
     @id_paciente_atribuicao1,
-    @id_paciente_atribuicao2
+    @id_paciente_atribuicao2,
+    @id_paciente_agendamento,
+    @id_paciente_proximas
 );
 
 -- -----------------------------------------------------
@@ -445,3 +554,97 @@ VALUES
     'Solicitação criada para testar a atribuição ao Aluno Teste 2.',
     'APROVADA'
 );
+
+-- -----------------------------------------------------
+-- 9. SOLICITAÇÃO EXCLUSIVA PARA TESTAR AGENDAMENTO
+-- -----------------------------------------------------
+
+SET @id_aluno_teste1 = (
+    SELECT id_aluno
+    FROM aluno
+    WHERE id_usuario = @id_usuario_aluno1
+);
+
+INSERT INTO solicitacoes_atendimento (
+    id_paciente,
+    id_aluno,
+    especialidade,
+    horario_desejado,
+    observacao_inicial,
+    solicitacoes_status
+)
+VALUES (
+    @id_paciente_agendamento,
+    @id_aluno_teste1,
+    'Ansiedade',
+    'Disponibilidade para agendamento',
+    'Solicitação criada exclusivamente para testar o agendamento de sessões.',
+    'ASSUMIDA'
+);
+
+
+-- -----------------------------------------------------
+-- 10. SESSÕES EXCLUSIVAS PARA TESTAR CONSULTA E ORDENAÇÃO
+-- -----------------------------------------------------
+
+INSERT INTO solicitacoes_atendimento (
+    id_paciente,
+    id_aluno,
+    especialidade,
+    horario_desejado,
+    observacao_inicial,
+    solicitacoes_status
+)
+VALUES (
+    @id_paciente_proximas,
+    @id_aluno_teste1,
+    'Ansiedade',
+    'Disponibilidade para acompanhamento',
+    'Solicitação criada exclusivamente para testar a consulta de próximas sessões.',
+    'ASSUMIDA'
+);
+
+SET @id_solicitacao_proximas = LAST_INSERT_ID();
+
+-- Três sessões futuras para validar a ordenação.
+INSERT INTO sessao (
+    id_solicitacao,
+    id_aluno,
+    data_sessao,
+    hora_inicio,
+    hora_fim,
+    observacao,
+    status_sessao
+)
+VALUES
+(
+    @id_solicitacao_proximas,
+    @id_aluno_teste1,
+    DATE_ADD(CURDATE(), INTERVAL 35 DAY),
+    '14:00:00',
+    '15:00:00',
+    'Segunda sessão de teste.',
+    'AGENDADA'
+),
+(
+    @id_solicitacao_proximas,
+    @id_aluno_teste1,
+    DATE_ADD(CURDATE(), INTERVAL 35 DAY),
+    '10:00:00',
+    '11:00:00',
+    'Primeira sessão de teste.',
+    'AGENDADA'
+),
+(
+    @id_solicitacao_proximas,
+    @id_aluno_teste1,
+    DATE_ADD(CURDATE(), INTERVAL 40 DAY),
+    '09:00:00',
+    '10:00:00',
+    'Terceira sessão de teste.',
+    'AGENDADA'
+);
+
+UPDATE solicitacoes_atendimento
+SET solicitacoes_status = 'EM_ATENDIMENTO'
+WHERE id_solicitacao = @id_solicitacao_proximas;
