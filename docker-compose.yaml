@@ -8,10 +8,23 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
 
     healthcheck:
-      test: ["CMD", "mysql", "-uroot", "-proot", "-e", "SELECT 1"]
+      test:
+        [
+          "CMD",
+          "mysql",
+          "--protocol=TCP",
+          "-h",
+          "127.0.0.1",
+          "-uroot",
+          "-proot",
+          "-e",
+          "SELECT 1"
+        ]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 10s
+
   app:
     build:
       context: .
