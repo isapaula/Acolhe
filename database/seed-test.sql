@@ -2,6 +2,7 @@ USE clinica;
 
 SET NAMES utf8mb4;
 SET collation_connection = 'utf8mb4_unicode_ci';
+SET time_zone = '-03:00';
 
 -- =====================================================
 -- DADOS DE TESTE DO ACOLHE
@@ -453,6 +454,58 @@ SET @id_paciente_proximas = (
 );
 
 -- -----------------------------------------------------
+-- 5.5. PACIENTE EXCLUSIVO PARA TESTAR CICLO DE VIDA
+-- -----------------------------------------------------
+
+INSERT INTO usuario (
+    nome_user, email_user, telefone, senha_user,
+    id_papel, ativo
+)
+VALUES (
+    'Paciente Teste Ciclo Vida',
+    'paciente.ciclo.vida@acolhe.local',
+    '11999990010',
+    @senha_hash,
+    1,
+    1
+)
+ON DUPLICATE KEY UPDATE
+    nome_user = VALUES(nome_user),
+    senha_user = VALUES(senha_user),
+    id_papel = VALUES(id_papel),
+    ativo = 1;
+
+SET @id_usuario_ciclo_vida = (
+    SELECT id_user
+    FROM usuario
+    WHERE email_user = 'paciente.ciclo.vida@acolhe.local'
+);
+
+INSERT INTO usuario_papel (id_usuario, id_papel)
+VALUES (@id_usuario_ciclo_vida, 1)
+ON DUPLICATE KEY UPDATE id_papel = VALUES(id_papel);
+
+INSERT INTO paciente (
+    id_usuario, nome_paciente, data_nascimento, ativo
+)
+VALUES (
+    @id_usuario_ciclo_vida,
+    'Paciente Teste Ciclo Vida',
+    '1990-09-15',
+    1
+)
+ON DUPLICATE KEY UPDATE
+    nome_paciente = VALUES(nome_paciente),
+    data_nascimento = VALUES(data_nascimento),
+    ativo = 1;
+
+SET @id_paciente_ciclo_vida = (
+    SELECT id_paciente
+    FROM paciente
+    WHERE id_usuario = @id_usuario_ciclo_vida
+);
+
+-- -----------------------------------------------------
 -- 6. LIMPEZA DAS SOLICITAÇÕES DOS QUATRO PACIENTES
 -- -----------------------------------------------------
 
@@ -467,7 +520,8 @@ WHERE id_solicitacao IN (
         @id_paciente_atribuicao1,
         @id_paciente_atribuicao2,
         @id_paciente_agendamento,
-        @id_paciente_proximas
+        @id_paciente_proximas,
+        @id_paciente_ciclo_vida
     )
 );
 
@@ -482,7 +536,8 @@ WHERE id_solicitacao IN (
         @id_paciente_atribuicao1,
         @id_paciente_atribuicao2,
         @id_paciente_agendamento,
-        @id_paciente_proximas
+        @id_paciente_proximas,
+        @id_paciente_ciclo_vida
     )
 );
 
@@ -494,7 +549,8 @@ WHERE id_paciente IN (
     @id_paciente_atribuicao1,
     @id_paciente_atribuicao2,
     @id_paciente_agendamento,
-    @id_paciente_proximas
+    @id_paciente_proximas,
+    @id_paciente_ciclo_vida
 );
 
 -- -----------------------------------------------------
@@ -644,6 +700,49 @@ VALUES
     '09:00:00',
     '10:00:00',
     'Terceira sessão de teste.',
+    'AGENDADA'
+);
+
+-- -----------------------------------------------------
+-- 11. SESSÃO ENCERRADA PARA TESTAR REGISTRO DE REALIZAÇÃO
+-- -----------------------------------------------------
+
+INSERT INTO solicitacoes_atendimento (
+    id_paciente,
+    id_aluno,
+    especialidade,
+    horario_desejado,
+    observacao_inicial,
+    solicitacoes_status
+)
+VALUES (
+    @id_paciente_ciclo_vida,
+    @id_aluno_teste1,
+    'Ansiedade',
+    'Disponibilidade para acompanhamento',
+    'Solicitação criada exclusivamente para testar o ciclo de vida da sessão.',
+    'EM_ATENDIMENTO'
+);
+
+SET @id_solicitacao_ciclo_vida = LAST_INSERT_ID();
+
+-- Sessão encerrada, mas ainda aguardando registro de realização.
+INSERT INTO sessao (
+    id_solicitacao,
+    id_aluno,
+    data_sessao,
+    hora_inicio,
+    hora_fim,
+    observacao,
+    status_sessao
+)
+VALUES (
+    @id_solicitacao_ciclo_vida,
+    @id_aluno_teste1,
+    DATE_SUB(CURDATE(), INTERVAL 1 DAY),
+    '09:00:00',
+    '10:00:00',
+    NULL,
     'AGENDADA'
 );
 
