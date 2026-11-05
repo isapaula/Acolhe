@@ -8,7 +8,7 @@ CREATE TABLE `papeis` (
   `nome_papel` enum('PACIENTE','ALUNO','PROFESSOR','GESTAO') NOT NULL,
   PRIMARY KEY (`id_papel`),
   UNIQUE KEY `nome_papel` (`nome_papel`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `papeis` VALUES (1,'PACIENTE'),(2,'ALUNO'),(3,'PROFESSOR'),(4,'GESTAO');
 
@@ -30,7 +30,7 @@ CREATE TABLE `usuario` (
   CONSTRAINT `nome_nao_vazio` CHECK ((`nome_user` <> _utf8mb4'')),
   CONSTRAINT `telefone_nao_vazio` CHECK ((`telefone` <> _utf8mb4'')),
   CONSTRAINT `senha_nao_vazio` CHECK ((`senha_user` <> _utf8mb4''))
-) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `usuario_papel`;
 CREATE TABLE `usuario_papel` (
@@ -40,7 +40,7 @@ CREATE TABLE `usuario_papel` (
   KEY `fk_up_papel` (`id_papel`),
   CONSTRAINT `fk_up_papel` FOREIGN KEY (`id_papel`) REFERENCES `papeis` (`id_papel`),
   CONSTRAINT `fk_up_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_user`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `paciente`;
 CREATE TABLE `paciente` (
@@ -54,7 +54,7 @@ CREATE TABLE `paciente` (
   PRIMARY KEY (`id_paciente`),
   UNIQUE KEY `uk_paciente_usuario` (`id_usuario`),
   CONSTRAINT `fk_paciente_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_user`)
-) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `aluno`;
 CREATE TABLE `aluno` (
@@ -67,7 +67,7 @@ CREATE TABLE `aluno` (
   PRIMARY KEY (`id_aluno`),
   UNIQUE KEY `uk_aluno_usuario` (`id_usuario`),
   CONSTRAINT `fk_aluno_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_user`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `professor`;
 CREATE TABLE `professor` (
@@ -79,7 +79,7 @@ CREATE TABLE `professor` (
   PRIMARY KEY (`id_professor`),
   UNIQUE KEY `uk_professor_usuario` (`id_usuario`),
   CONSTRAINT `fk_professor_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_user`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `solicitacoes_atendimento`;
 CREATE TABLE `solicitacoes_atendimento` (
@@ -94,7 +94,7 @@ CREATE TABLE `solicitacoes_atendimento` (
   PRIMARY KEY (`id_solicitacao`),
   KEY `fk_solicitacao_paciente` (`id_paciente`),
   CONSTRAINT `fk_solicitacao_paciente` FOREIGN KEY (`id_paciente`) REFERENCES `paciente` (`id_paciente`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `sessao`;
 CREATE TABLE `sessao` (
@@ -112,7 +112,7 @@ CREATE TABLE `sessao` (
   KEY `fk_up_aluno` (`id_aluno`),
   CONSTRAINT `fk_up_aluno` FOREIGN KEY (`id_aluno`) REFERENCES `aluno` (`id_aluno`),
   CONSTRAINT `fk_up_solicitacao` FOREIGN KEY (`id_solicitacao`) REFERENCES `solicitacoes_atendimento` (`id_solicitacao`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS `acompanhamentos`;
 CREATE TABLE `acompanhamentos` (
@@ -133,7 +133,7 @@ CREATE TABLE `acompanhamentos` (
   CONSTRAINT `fk_acomp_paciente` FOREIGN KEY (`id_paciente`) REFERENCES `paciente` (`id_paciente`),
   CONSTRAINT `fk_acomp_professor` FOREIGN KEY (`id_professor`) REFERENCES `professor` (`id_professor`),
   CONSTRAINT `fk_acomp_solicitacao` FOREIGN KEY (`id_solicitacao`) REFERENCES `solicitacoes_atendimento` (`id_solicitacao`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE solicitacoes_atendimento
 ADD COLUMN id_paciente_solicitacao_ativa INT

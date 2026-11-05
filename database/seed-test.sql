@@ -1,5 +1,7 @@
-
 USE clinica;
+
+SET NAMES utf8mb4;
+SET collation_connection = 'utf8mb4_unicode_ci';
 
 -- =====================================================
 -- DADOS DE TESTE DO ACOLHE
