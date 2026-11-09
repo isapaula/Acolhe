@@ -31,7 +31,7 @@ class UsuarioController
             }
 
 
-            $sql = "SELECT id_user, nome_user, email_user, senha_user, id_papel FROM usuario WHERE email_user = ? ;";
+            $sql = "SELECT id_user, nome_user, email_user, senha_user, id_papel FROM usuario WHERE email_user = ? AND ativo = 1 ;";
 
             $stmt = $pdo->prepare($sql);
 
@@ -49,6 +49,8 @@ class UsuarioController
 
                 return;
             }
+
+            session_regenerate_id(true);
 
             $_SESSION['user_id'] = $usuario['id_user'];
             $_SESSION['user_nome'] = $usuario['nome_user'];

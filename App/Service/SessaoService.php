@@ -169,7 +169,7 @@ class SessaoService
     ): array {
         $pdo = $this->pdo;
 
-        // Confirma que a solicitação pertence ao aluno autenticado.
+
         $sqlSolicitacao = "
             SELECT
                 sa.id_solicitacao,
@@ -194,7 +194,7 @@ class SessaoService
             ];
         }
 
-        // A validação usa a data do servidor PHP, como no comportamento atual.
+
         if ($dataSessao < date('Y-m-d')) {
             return [
                 'status' => 'data_passada'
@@ -204,7 +204,7 @@ class SessaoService
         $pdo->beginTransaction();
 
         try {
-        // Verifica conflito com outra sessão do mesmo aluno.
+
         $sqlConflito = "
             SELECT COUNT(*)
             FROM sessao
@@ -289,7 +289,7 @@ class SessaoService
     ): string {
         $pdo = $this->pdo;
 
-        // Confirma que a sessão pertence ao aluno autenticado.
+
         $sql = "
             SELECT
                 s.id_sessao,
@@ -316,7 +316,7 @@ class SessaoService
             return 'indisponivel';
         }
 
-        // O horário é validado pelo banco, não pelo navegador.
+
         $stmtHorario = $pdo->prepare("
             SELECT TIMESTAMP(data_sessao, hora_fim) < NOW()
             FROM sessao
@@ -328,8 +328,6 @@ class SessaoService
             return 'horario_futuro';
         }
 
-        // Atualiza somente se a sessão ainda estiver disponível
-        // e se o horário de término já tiver passado.
         $sqlUpdate = "
             UPDATE sessao s
             INNER JOIN aluno a

@@ -13,6 +13,7 @@ class AuthController
 {
     public function paciente()
     {
+        $pdo = null;
 
         try {
 
@@ -51,7 +52,7 @@ class AuthController
 
         } catch (\Exception $e) {
 
-            if ($pdo->inTransaction()) {
+            if ($pdo !== null && $pdo->inTransaction()) {
                 $pdo->rollBack();
             }
 
@@ -67,6 +68,8 @@ class AuthController
 
     public function professor()
     {
+
+        $pdo = null;
 
         try {
 
@@ -104,7 +107,7 @@ class AuthController
 
         } catch (\Exception $e) {
 
-            if ($pdo->inTransaction()) {
+            if ($pdo !== null && $pdo->inTransaction()) {
                 $pdo->rollBack();
             }
 
@@ -119,6 +122,7 @@ class AuthController
 
     public function aluno()
     {
+        $pdo = null;
 
         try {
 
@@ -156,7 +160,7 @@ class AuthController
 
         } catch (\Exception $e) {
 
-            if ($pdo->inTransaction()) {
+            if ($pdo !== null && $pdo->inTransaction()) {
 
                 $pdo->rollBack();
             }

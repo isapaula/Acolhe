@@ -39,7 +39,13 @@ class UsuarioService
             
         }
 
-        $dados['email'] = filter_var($dados['email'], FILTER_SANITIZE_EMAIL);
+        $email = filter_var($dados['email'], FILTER_VALIDATE_EMAIL);
+
+        if ($email === false) {
+            throw new \Exception("Email não informado ou inválido!");
+        }
+
+        $dados['email'] = $email;
 
         return $dados;
 
