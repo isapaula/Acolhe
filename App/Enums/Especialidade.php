@@ -10,6 +10,4 @@ enum Especialidade: string
     case TR = 'Traumas gerais';
     case C = 'Padrões comportamentais';
     case O = 'Orientação';
-
-
 }

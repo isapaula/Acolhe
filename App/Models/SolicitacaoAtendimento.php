@@ -20,14 +20,10 @@ class SolicitacaoAtendimento
         return $this->status;
     }
 
-    // métodos setters devem ser feitos com métodos de intenção
-    // como por exemplo, marcarComoEmAnalise() e marcarComoNaoElegivel()
-
     public function getPaciente()
     {
         return $this->paciente;
     }
-
 
     public function getIdSolicitacao()
     {

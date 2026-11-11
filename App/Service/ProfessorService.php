@@ -2,34 +2,30 @@
 
 namespace App\Service;
 
+use PDO;
+
 class ProfessorService
 {
+    private PDO $pdo; 
 
-    private $pdo; 
-
-    public function __construct($pdo) {
+    public function __construct(PDO $pdo) {
 
         $this->pdo = $pdo;
     }
 
-    public function criar($dados)
+    public function criar(array $dados): int
     {
-
 
             $sql = "INSERT INTO professor (id_usuario, registro_profissional)
                 VALUES (:id_usuario, :registro_profissional)";
 
-            $stmtprofessor = $this->pdo->prepare($sql);
+            $stmtProfessor = $this->pdo->prepare($sql);
 
-            $stmtprofessor->bindValue(':id_usuario', $dados['id_usuario'], \PDO::PARAM_STR);
-            $stmtprofessor->bindValue(':registro_profissional', $dados['registro_profissional'], \PDO::PARAM_STR);
+            $stmtProfessor->bindValue(':id_usuario', $dados['id_usuario'], PDO::PARAM_INT);
+            $stmtProfessor->bindValue(':registro_profissional', $dados['registro_profissional'], PDO::PARAM_STR);
 
-            $stmtprofessor->execute();
+            $stmtProfessor->execute();
 
-            $idprofessor = $this->pdo->lastInsertId();
-
-            $_SESSION['professor_id'] = $idprofessor;
-
-
+            return (int) $this->pdo->lastInsertId();
     }
 }
