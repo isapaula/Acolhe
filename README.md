@@ -6,7 +6,7 @@
 
 <h2 align="center">Acolhe — Sistema para Clínica-Escola de Psicologia</h2>
 
-<p align="center">Versão 2.0</p>
+<p align="center">Versão 1.0</p>
 
 <p align="center">
   Sistema de gerenciamento de atendimentos para clínicas-escola de psicologia, com controle de acesso por perfil, fluxo de triagem, atribuição de casos e agendamento de sessões.
@@ -323,7 +323,7 @@ Durante o desenvolvimento do Acolhe, alguns dos principais aprendizados foram:
 
 # Status do projeto
 
-**Versão 2.0 — Concluída**
+**Versão 1.0 — Concluída**
 
 O fluxo principal da aplicação foi implementado, testado e integrado ao pipeline de CI.
 
@@ -347,7 +347,7 @@ O projeto é considerado concluído em sua versão atual.
 
 # Possíveis evoluções
 
-Embora a versão 2.0 esteja concluída, algumas evoluções poderiam ser realizadas futuramente, caso o projeto volte a ser desenvolvido:
+Embora a versão 1.0 esteja concluída, algumas evoluções poderiam ser realizadas futuramente, caso o projeto volte a ser desenvolvido:
 
 - ampliação da cobertura dos testes automatizados;
 - criação de testes de API;
@@ -376,4 +376,4 @@ O Acolhe foi desenvolvido como um projeto de estudo e portfólio com o objetivo 
 
 A aplicação representa um ciclo completo: desde o cadastro e solicitação de atendimento até a triagem, atribuição do caso, agendamento e acompanhamento das sessões.
 
-A versão 2.0 encerra esse ciclo e serve como base para demonstrar as práticas utilizadas durante o desenvolvimento.
+A versão 1.0 encerra esse ciclo e serve como base para demonstrar as práticas utilizadas durante o desenvolvimento.
