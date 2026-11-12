@@ -13,7 +13,7 @@ import { RegisterPage } from "./components/RegisterPage";
 import { PatientPortal } from "./components/PatientPortal";
 import { StudentPortal } from "./components/StudentPortal";
 import { TeacherPortal } from "./components/TeacherPortal";
-import { buscarUsuarios } from "./api/usuarioApi";
+
 
   interface CurrentUser {
   id: number;
@@ -56,10 +56,23 @@ export default function App() {
     }
   }, [highContrast]);
 
+    const handleTriageRequiresLogin = () => {
+    setTriageRequiresLogin(true);
+    setIsTriageOpen(false);
+    setCurrentView("login");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleOpenTriage = (serviceName?: string) => {
     if (serviceName) {
       setTriageDefaultService(serviceName);
     }
+
+    if (!currentUser) {
+      handleTriageRequiresLogin();
+      return;
+    }
+
     setIsTriageOpen(true);
   };
 
@@ -86,14 +99,6 @@ export default function App() {
     setCurrentUserRole(null);
     setCurrentView("landing");
   };
-
-  const handleTriageRequiresLogin = () => {
-    setTriageRequiresLogin(true);
-    setIsTriageOpen(false);
-    setCurrentView("login");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
 
   return (
     <div
