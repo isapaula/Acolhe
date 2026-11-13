@@ -22,3 +22,5 @@ $dotenv->safeLoad();
 
 $router = new Router(); 
 $router->dispatch();
+
+
